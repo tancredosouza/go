@@ -1,0 +1,69 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strconv"
+	"sync"
+	"time"
+)
+
+var accountBalance = 0    // balance for shared bank account
+var mutex = &sync.Mutex{} // mutual-exclusion lock
+
+var subtracting = false
+var adding = false
+
+// critical-section code with explicit locking/unlocking
+func updateBalance(amt int, b bool, n time.Duration) {
+	//mutex.Lock()
+	if b {
+		subtracting = true
+	} else {
+		adding = true
+	}
+
+	accountBalance += amt // two operations: update and assignment
+	//fmt.Println(accountBalance)
+	fmt.Println(adding, subtracting)
+
+	if b {
+		subtracting = false
+	} else {
+		adding = false
+	}
+
+	//mutex.Unlock()
+	time.Sleep(n * time.Second)
+}
+
+func reportAndExit(msg string) {
+	fmt.Println(msg)
+	os.Exit(-1) // all 1s in binary
+}
+
+func main() {
+	if len(os.Args) < 2 {
+		reportAndExit("\nUsage: go ms1.go <number of updates per thread>")
+	}
+	iterations, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		reportAndExit("Bad command-line argument: " + os.Args[1])
+	}
+
+	// miser increments the balance
+	go func() {
+		for i := 0; i < iterations; i++ {
+			updateBalance(1, false, 3)
+		}
+	}()
+
+	// spendthrift decrements the balance
+	go func() {
+		for i := 0; i < iterations; i++ {
+			updateBalance(-1, true, 5)
+		}
+	}() // await completion of miser and spendthrift
+
+	fmt.Scanln()
+}

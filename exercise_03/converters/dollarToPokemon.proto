@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package converters;
+
+service Greeter {
+  rpc ConvertToPokemon (Request) returns (Reply);
+}
+
+// Mensagem de Request
+message Request {
+  string DollarInReais = 1;
+}
+
+//Mensagem de resposta
+message Reply {
+  string PokemonName = 1;
+}
