@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func generateRandomReaisAmount() string {
+func randomAmountOfReais() string {
 	rand.Seed(time.Now().UnixNano())
 	reaisAmount := rand.Intn(10)
 	centsAmount := rand.Intn(99)
@@ -33,17 +33,24 @@ func main() {
 	requestQueue  := CreateQueueOnChannel(ch, "request")
 	responseQueue := CreateQueueOnChannel(ch, "response")
 
-	msgs := ConsumeFromQueue(responseQueue.Name, ch)
+	responseMessages := ConsumeFromQueue(responseQueue.Name, ch)
 
-	for i := 0; i < 10000; i++ {
-		reaisAmount := generateRandomReaisAmount()
+	//go keepReceivingMessagesFromChannel(responseMessages)
+
+	sampleSize := 10000
+	for i := 0; i < sampleSize; i++ {
+		reaisAmount := randomAmountOfReais()
+
+		//timeStart := time.Now()
+
 		PublishMessageToQueue(reaisAmount, requestQueue.Name, ch)
-		//a := <- msgs
 
-		//log.Printf(strconv.Itoa(i) + "  -- " + string(a.Body))
+		<-responseMessages
+
+		//timeEnd := time.Since(timeStart)
+		//log.Print(timeEnd.Seconds())
 	}
 
-	go keepReceivingMessagesFromChannel(msgs)
 
 	fmt.Scanln()
 }

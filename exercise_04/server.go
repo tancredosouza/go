@@ -15,22 +15,22 @@ const RegexCurrencyToNumber = `R\$(?P<Reais>\d+)\,(?P<Cents>\d+)`
 //something went wrong in the conversion
 const ErrorCode = -1
 
-func getPokemonNumberFromDollarAmount(dollarAmount string) int {
-	params := getParams(RegexCurrencyToNumber, dollarAmount)
+func extractNumberFromCurrency(amountOfReais string) int {
+	params := getParams(RegexCurrencyToNumber, amountOfReais)
 
 	if len(params) == 0 {
 		return ErrorCode
 	}
 
-	moneyAmountAsText := params["Reais"] + params["Cents"]
-	pokemonNumber, err := strconv.Atoi(moneyAmountAsText)
+	amountAsText := params["Reais"] + params["Cents"]
+	number, err := strconv.Atoi(amountAsText)
 
 	if err != nil {
 		fmt.Println(err)
 		return ErrorCode
 	}
 
-	return pokemonNumber
+	return number
 }
 
 //Parses url with the given regular expression and
@@ -48,21 +48,21 @@ func getParams(regEx, url string) (paramsMap map[string]string) {
 	return
 }
 
-func getValidPokemonNameFromPokemonNumber(pokemonNumber int) string {
-	if pokemonNumber <= 0 {
+func buildValidResponseMessage(pokemonIndex int) string {
+	if pokemonIndex <= 0 {
 		return "Invalid result. Make sure your string matches the format R$xx.xx"
-	} else if pokemonNumber >= len(Pokemons) {
+	} else if pokemonIndex >= len(Pokemons) {
 		return "... Well.. There's not enough Pokémons."
 	} else {
-		return "#" + strconv.Itoa(pokemonNumber) + ": " + Pokemons[pokemonNumber-1]
+		return "#" + strconv.Itoa(pokemonIndex) + ": " + Pokemons[pokemonIndex-1]
 	}
 }
 
-func receiveAndConvertMessages(queueName string, msgs (<- chan amqp.Delivery), ch (*amqp.Channel)) {
+func processAndReturnMessages(queueName string, msgs (<- chan amqp.Delivery), ch (*amqp.Channel)) {
 	for d := range msgs {
 		msg := string(d.Body)
-		pokemonNumber := getPokemonNumberFromDollarAmount(msg)
-		responseMessage := getValidPokemonNameFromPokemonNumber(pokemonNumber)
+		pokemonIndex := extractNumberFromCurrency(msg)
+		responseMessage := buildValidResponseMessage(pokemonIndex)
 		PublishMessageToQueue(responseMessage, queueName, ch)
 	}
 }
@@ -79,7 +79,7 @@ func main() {
 
 	msgs := ConsumeFromQueue(requestQueue.Name, ch)
 
-	go receiveAndConvertMessages(responseQueue.Name, msgs, ch)
+	go processAndReturnMessages(responseQueue.Name, msgs, ch)
 
 	fmt.Scanln()
 }
