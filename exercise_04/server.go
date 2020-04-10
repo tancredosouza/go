@@ -1,10 +1,8 @@
 package main
 
 import (
-	"exercise_04/shared"
 	"fmt"
 	"github.com/streadway/amqp"
-	"log"
 	"regexp"
 	"strconv"
 )
@@ -16,12 +14,6 @@ const RegexCurrencyToNumber = `R\$(?P<Reais>\d+)\,(?P<Cents>\d+)`
 //ErrorCode ..., equal to -1, is used as a return value to determine
 //something went wrong in the conversion
 const ErrorCode = -1
-
-func failOnError(err error, msg string) {
-	if err != nil {
-		log.Fatalf("%s: %s", msg, err)
-	}
-}
 
 func getPokemonNumberFromDollarAmount(dollarAmount string) int {
 	params := getParams(RegexCurrencyToNumber, dollarAmount)
@@ -59,76 +51,35 @@ func getParams(regEx, url string) (paramsMap map[string]string) {
 func getValidPokemonNameFromPokemonNumber(pokemonNumber int) string {
 	if pokemonNumber <= 0 {
 		return "Invalid result. Make sure your string matches the format R$xx.xx"
-	} else if pokemonNumber >= len(shared.Pokemons) {
+	} else if pokemonNumber >= len(Pokemons) {
 		return "... Well.. There's not enough Pokémons."
 	} else {
-		return "#" + strconv.Itoa(pokemonNumber) + ": " + shared.Pokemons[pokemonNumber-1]
+		return "#" + strconv.Itoa(pokemonNumber) + ": " + Pokemons[pokemonNumber-1]
 	}
 }
 
+func receiveAndConvertMessages(queueName string, msgs (<- chan amqp.Delivery), ch (*amqp.Channel)) {
+	for d := range msgs {
+		msg := string(d.Body)
+		pokemonNumber := getPokemonNumberFromDollarAmount(msg)
+		responseMessage := getValidPokemonNameFromPokemonNumber(pokemonNumber)
+		PublishMessageToQueue(responseMessage, queueName, ch)
+	}
+}
 
 func main() {
-	conn, err := amqp.Dial("amqp://127.0.0.1:5672/")
-	failOnError(err, "Failed to connect to RabbitMQ")
+	conn := CreateConnectionWithHost("amqp://guest:guest@localhost:5672/")
 	defer conn.Close()
-	fmt.Println("Successfully connected to RabbitMQ.")
 
-	ch, err := conn.Channel()
-	failOnError(err, "Failed to open a channel")
+	ch := CreateChannelOnConnection(conn)
 	defer ch.Close()
-	fmt.Println("Successfully opened channel")
 
-	requestQueue, err := ch.QueueDeclare(
-		"request",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	failOnError(err, "Failed to declare a queue")
+	requestQueue := CreateQueueOnChannel(ch, "request")
+	responseQueue := CreateQueueOnChannel(ch, "response")
 
-	responseQueue, err := ch.QueueDeclare(
-		"response",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-	failOnError(err, "Failed to declare a queue")
+	msgs := ConsumeFromQueue(requestQueue.Name, ch)
 
-	fmt.Println("Successfully declared queue")
-
-	msgs, _ := ch.Consume(
-		requestQueue.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-
-	go func() {
-		for d := range msgs {
-			responseMessage := getValidPokemonNameFromPokemonNumber(getPokemonNumberFromDollarAmount(string(d.Body)))
-
-			err = ch.Publish(
-				"",
-				responseQueue.Name,
-				false,
-				false,
-				amqp.Publishing{
-					ContentType: "text/plain",
-					Body:        []byte(responseMessage),
-				})
-
-			failOnError(err, "Failed to publish message.")
-		}
-	}()
-
-	failOnError(err, "Failed to publish a message")
+	go receiveAndConvertMessages(responseQueue.Name, msgs, ch)
 
 	fmt.Scanln()
 }

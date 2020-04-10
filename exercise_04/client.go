@@ -2,12 +2,11 @@ package main
 
 import (
 	"fmt"
+	"github.com/streadway/amqp"
 	"log"
 	"math/rand"
 	"strconv"
 	"time"
-
-	"github.com/streadway/amqp"
 )
 
 func generateRandomReaisAmount() string {
@@ -18,64 +17,33 @@ func generateRandomReaisAmount() string {
 	return "R$" + strconv.Itoa(reaisAmount) + "," + strconv.Itoa(centsAmount)
 }
 
+func keepReceivingMessagesFromChannel(msgs (<- chan amqp.Delivery)) {
+	for d := range msgs {
+		log.Printf("Received a message: %s", d.Body)
+	}
+}
+
 func main() {
-	conn, _ := amqp.Dial("amqp://127.0.0.1:5672/")
+	conn := CreateConnectionWithHost("amqp://guest:guest@localhost:5672/")
 	defer conn.Close()
-	fmt.Println("Successfully connected to RabbitMQ.")
 
-	ch, _ := conn.Channel()
+	ch := CreateChannelOnConnection(conn)
 	defer ch.Close()
-	fmt.Println("Successfully opened channel")
 
-	requestQueue, _ := ch.QueueDeclare(
-		"request",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
+	requestQueue  := CreateQueueOnChannel(ch, "request")
+	responseQueue := CreateQueueOnChannel(ch, "response")
 
-	responseQueue, _ := ch.QueueDeclare(
-		"response",
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
+	msgs := ConsumeFromQueue(responseQueue.Name, ch)
 
-	fmt.Println("Successfully declared queue")
+	for i := 0; i < 10000; i++ {
+		reaisAmount := generateRandomReaisAmount()
+		PublishMessageToQueue(reaisAmount, requestQueue.Name, ch)
+		//a := <- msgs
 
-	body := generateRandomReaisAmount()
-	fmt.Println(body)
-	_ = ch.Publish(
-		"",                // exchange
-		requestQueue.Name, // routing key
-		false,             // mandatory
-		false,             // immediate
-		amqp.Publishing{
-			ContentType: "text/plain",
-			Body:        []byte(body),
-		})
+		//log.Printf(strconv.Itoa(i) + "  -- " + string(a.Body))
+	}
 
-	msgs, _ := ch.Consume(
-		responseQueue.Name,
-		"",
-		true,
-		false,
-		false,
-		false,
-		nil,
-	)
-
-	go func() {
-		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
-		}
-	}()
-
-	log.Printf(" [x] Sent %s", body)
+	go keepReceivingMessagesFromChannel(msgs)
 
 	fmt.Scanln()
 }

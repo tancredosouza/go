@@ -1,9 +1,80 @@
-package shared
+package main
+
+import (
+	"fmt"
+	"github.com/streadway/amqp"
+	"log"
+)
+
+func CreateConnectionWithHost(hostUrl string) (*amqp.Connection) {
+	conn, err := amqp.Dial(hostUrl)
+	FailOnError(err, "Failed while creating RabbitMQ connection.")
+	fmt.Println("Successfully connected to RabbitMQ.")
+
+	return conn
+}
+
+func CreateChannelOnConnection(conn (*amqp.Connection)) (*amqp.Channel) {
+	ch, err := conn.Channel()
+	FailOnError(err, "Failed while opening channel.")
+	fmt.Println("Successfully opened channel")
+
+	return ch
+}
+
+func CreateQueueOnChannel(ch (*amqp.Channel), queueName string) (amqp.Queue) {
+	requestQueue, err := ch.QueueDeclare(
+		"request",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	FailOnError(err, "Failed creating queue  "+ queueName+".")
+	fmt.Println("Successfully declared queue " + queueName + ".")
+
+	return requestQueue
+}
+
+func PublishMessageToQueue(msg string, queueName string, ch *amqp.Channel) {
+	err := ch.Publish(
+		"",
+		queueName,
+		false,
+		false,
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(msg),
+		})
+	FailOnError(err, "Failed publishing message [" + msg + "] to queue [" + queueName + "].")
+}
+
+func ConsumeFromQueue(queueName string, ch *amqp.Channel) (<- chan amqp.Delivery) {
+	messages, err := ch.Consume(
+		queueName,
+		"",
+		true,
+		false,
+		false,
+		false,
+		nil,
+	)
+	FailOnError(err, "Failed creating consumer for queue [" + queueName + "].")
+
+	return messages
+}
 
 const LOCAL_HOST_IP = "127.0.0.1"
 const DEFAULT_PORT = "7610"
 const TCP_PROTOCOL = "tcp"
 const UDP_PROTOCOL = "udp"
+
+func FailOnError(err error, msg string) {
+	if (err != nil) {
+		log.Fatal(msg)
+	}
+}
 
 var Pokemons = []string{
 	"Bulbasaur",
@@ -723,3 +794,5 @@ var Pokemons = []string{
 	"Noivern",
 	"Xerneas",
 	"Yveltal"}
+
+
