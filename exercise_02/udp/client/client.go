@@ -15,11 +15,11 @@ import (
 func main() {
 
 	lim := 1
-	//_, err := os.Create("times_udp" + strconv.Itoa(lim) + ".txt") // creating...
-	//if err != nil {
-	//	fmt.Printf("error creating file: %v", err)
-	//	return
-	//}
+	_, err := os.Create("times_udp" + strconv.Itoa(lim) + ".txt") // creating...
+	if err != nil {
+		fmt.Printf("error creating file: %v", err)
+		return
+	}
 
 	for i := 1; i < lim; i++ {
 		go startAndRunClient(false, "")
@@ -33,22 +33,21 @@ func startAndRunClient(shouldWriteToFile bool, filename string) {
 	serverConnection := startUDPConnectionOnLocalHost()
 
 	for i := 0; i < 10000; i++ {
-		//startTime := time.Now()
-
-		reaisAmount := generateRandomReaisAmount()
+		reaisAmount := "R$6,12"
 		var message []byte = []byte(reaisAmount)
 
+		startTime := time.Now()
 		_, err := serverConnection.Write(message)
 		if err != nil {
 			fmt.Println(err)
 		}
 
 		listen(serverConnection)
-		//endTime := time.Since(startTime)
+		endTime := time.Since(startTime)
 
-		//if shouldWriteToFile {
-		//	writeToFile(endTime, filename)
-		//}
+		if shouldWriteToFile {
+			writeToFile(endTime, filename)
+		}
 	}
 
 	serverConnection.Close()
@@ -59,17 +58,17 @@ func listen(connection *net.UDPConn) {
 	buffer := make([]byte, 1024)
 	_, _, err := 0, new(net.UDPAddr), error(nil)
 	for err == nil {
-		n, _, innerError := connection.ReadFromUDP(buffer)
+		_, _, innerError := connection.ReadFromUDP(buffer)
 
 		if innerError != nil {
 			fmt.Println(innerError)
 			break
 		}
 
-		if n != 0 {
-			fmt.Println(string(buffer[:n]))
-			break
-		}
+		//if n != 0 {
+		//		fmt.Println(string(buffer[:n]))
+		//	break
+		//}
 	}
 }
 

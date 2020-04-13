@@ -16,7 +16,7 @@ import (
 
 func main() {
 
-	lim := 5
+	lim := 1
 	_, err := os.Create("time_in_seconds" + strconv.Itoa(lim) + ".txt") // creating...
 	if err != nil {
 			fmt.Printf("error creating file: %v", err)
@@ -37,9 +37,10 @@ func startAndRunClient(shouldWrite bool, filename string) {
 	ctx := context.Background()
 
 	for i := 0; i < 10000; i++ {
+		x := "R$6,12"
 		startTime := time.Now()
 
-		_, err := converter.ConvertToPokemon(ctx, &converters.Request{DollarInReais: generateRandomReaisAmount()})
+		_, err := converter.ConvertToPokemon(ctx, &converters.Request{DollarInReais: x})
 
 		if err != nil {
 			fmt.Println(err)

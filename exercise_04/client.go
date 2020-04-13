@@ -5,6 +5,7 @@ import (
 	"github.com/streadway/amqp"
 	"log"
 	"math/rand"
+	"os"
 	"strconv"
 	"time"
 )
@@ -24,6 +25,17 @@ func keepReceivingMessagesFromChannel(msgs (<- chan amqp.Delivery)) {
 }
 
 func main() {
+	outputFile, err := os.Create("times.txt")
+	FailOnError(err, "Failed creating file.")
+
+	// close fi on exit and check for its returned error
+	defer func() {
+		if err := outputFile.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	// -----------------------------
+
 	conn := CreateConnectionWithHost("amqp://guest:guest@localhost:5672/")
 	defer conn.Close()
 
@@ -37,18 +49,16 @@ func main() {
 
 	//go keepReceivingMessagesFromChannel(responseMessages)
 
+	reaisAmount := "R$6,12"
 	sampleSize := 10000
 	for i := 0; i < sampleSize; i++ {
-		reaisAmount := randomAmountOfReais()
-
-		//timeStart := time.Now()
+		timeStart := time.Now()
 
 		PublishMessageToQueue(reaisAmount, requestQueue.Name, ch)
 
 		<-responseMessages
-
-		//timeEnd := time.Since(timeStart)
-		//log.Print(timeEnd.Seconds())
+		timeEnd := time.Since(timeStart)
+		fmt.Fprintln(outputFile, timeEnd.Seconds())
 	}
 
 

@@ -15,11 +15,11 @@ import (
 func main() {
 
 	lim := 1
-	//_, err := os.Create("times_tcp" + strconv.Itoa(lim) + ".txt") // creating...
-	//if err != nil {
-	//		fmt.Printf("error creating file: %v", err)
-	//		return
-	//	}
+	_, err := os.Create("times_tcp" + strconv.Itoa(lim) + ".txt") // creating...
+	if err != nil {
+			fmt.Printf("error creating file: %v", err)
+			return
+		}
 
 	for i := 1; i < lim; i++ {
 		go startAndRunClient(false, "")
@@ -31,16 +31,19 @@ func main() {
 
 func startAndRunClient(shouldWrite bool, filename string) {
 	serverConnection := startTCPConnectionOnLocalHost()
+	dollarCost := "R$6,12"
+
 	for i := 0; i < 10000; i++ {
-		//startTime := time.Now()
+		startTime := time.Now()
+		fmt.Fprintf(serverConnection, dollarCost+"\n")
 
-		runClientWithConnection(serverConnection)
+		getAndPrintPokemonFrom(serverConnection)
 
-		//endTime := time.Since(startTime)
+		endTime := time.Since(startTime)
 
-		//if shouldWrite {
-		//	writeToFile(endTime, filename)
-		//}
+		if shouldWrite {
+			writeToFile(endTime, filename)
+		}
 	}
 	serverConnection.Close()
 }
@@ -79,11 +82,11 @@ func readDollarCostInReaisFromUserInput() string {
 }
 
 func getAndPrintPokemonFrom(serverConnection net.Conn) {
-	message, err := bufio.NewReader(serverConnection).ReadString('\n')
+	_, err := bufio.NewReader(serverConnection).ReadString('\n')
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("Pokemon " + message)
+	//fmt.Println("Pokemon " + message)
 }
 
 func writeToFile(t time.Duration, filename string) {

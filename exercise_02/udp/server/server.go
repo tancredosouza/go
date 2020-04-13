@@ -18,7 +18,7 @@ const RegexCurrencyToNumber = `R\$(?P<Reais>\d+)\,(?P<Cents>\d+)`
 //something went wrong in the conversion
 const ErrorCode = -1
 
-const NUMBER_OF_CONNECTIONS = 5
+const NUMBER_OF_CONNECTIONS = 1
 
 func main() {
 	startAndRunServer()
