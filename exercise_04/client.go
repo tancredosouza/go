@@ -25,6 +25,7 @@ func keepReceivingMessagesFromChannel(msgs (<- chan amqp.Delivery)) {
 }
 
 func main() {
+	// Create output file
 	outputFile, err := os.Create("times.txt")
 	FailOnError(err, "Failed creating file.")
 
@@ -47,7 +48,7 @@ func main() {
 
 	responseMessages := ConsumeFromQueue(responseQueue.Name, ch)
 
-	//go keepReceivingMessagesFromChannel(responseMessages)
+	//go keepReceivingMessagesFromChannel(responseMessages) <- this implementation didn't work as expected.
 
 	reaisAmount := "R$6,12"
 	sampleSize := 10000
@@ -60,7 +61,6 @@ func main() {
 		timeEnd := time.Since(timeStart)
 		fmt.Fprintln(outputFile, timeEnd.Seconds())
 	}
-
 
 	fmt.Scanln()
 }
