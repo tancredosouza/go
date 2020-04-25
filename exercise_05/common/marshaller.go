@@ -7,7 +7,7 @@ import (
 
 type Marshaller struct{}
 
-func (t Marshaller) Marshall(data string) []byte {
+func (t Marshaller) Marshall(data interface{}) []byte {
 	serializedData, err := json.Marshal(data)
 	if (err != nil) {
 		log.Fatal("Error serializing data. ", err)
@@ -16,8 +16,8 @@ func (t Marshaller) Marshall(data string) []byte {
 	return serializedData
 }
 
-func (t Marshaller) Unmarshall(bytes []byte) string {
-	var data string
+func (t Marshaller) Unmarshall(bytes []byte) interface{} {
+	var data interface{}
 	err := json.Unmarshal(bytes, &data)
 
 	if (err != nil) {
