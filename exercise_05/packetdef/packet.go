@@ -1,16 +1,43 @@
 package packetdef
 
-type msgType int
-
-const (
-	REQUEST = 1
-	RESPONSE = 2
-)
+type Packet struct {
+	Header Header
+	Body   Body
+}
 
 type Header struct {
 	Magic string
 	Version string
 	IsLittleEndian bool
-	MsgType msgType
+	MsgType int
 	BodySizeInBytes int
+}
+
+type Body struct {
+	RequestHeader  RequestHeader
+	RequestBody    RequestBody
+	ResponseHeader ResponseHeader
+	ResponseBody   ResponseBody
+}
+
+type RequestHeader struct {
+	Context string
+	RequestId int
+	ExpectsResponse bool
+	RemoteObjectId int
+	Operation string
+}
+
+type RequestBody struct {
+	Data []interface{}
+}
+
+type ResponseHeader struct {
+	Context string
+	RequestId int
+	Status int
+}
+
+type ResponseBody struct {
+	Data []interface{}
 }
