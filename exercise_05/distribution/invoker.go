@@ -6,6 +6,10 @@ import "../packetdef"
 
 type invoker struct {}
 
+const (
+	STACK_ID = 1
+)
+
 var stack []int
 
 func (i invoker) exec() {
@@ -30,7 +34,7 @@ func process(data []byte) []byte {
 
 	// choose operation
 	op := p.Body.RequestHeader.Operation
-	if (id == 1) {
+	if (id == STACK_ID) {
 		switch op {
 		case "pop": // pop from stack
 			stack = stack[:len(stack)-1]
@@ -69,4 +73,24 @@ func process(data []byte) []byte {
 
 	// return answer
 	return m.Marshall(response)
+}
+
+func operateOnStack(operation string, v int) ([]interface{}, error) {
+	ans := make([]interface{}, 1)
+	switch operation {
+	case "pop": // pop from stack
+	stack = stack[:len(stack)-1]
+	ans[0] = "Operation successful"
+	case "push":
+	stack = append(stack, v)
+	ans[0] = "Operation successful"
+	case "top": // get top
+	ans[0] = stack[len(stack)-1]
+	case "size": // get stack size
+	ans[0] = len(stack)
+	default:
+	// TODO: send error message
+	}
+
+	return ans, nil
 }
