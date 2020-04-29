@@ -1,9 +1,14 @@
 package main
 
-import "../distribution"
+import (
+	"../service"
+	"fmt"
+)
 
 func main() {
-	i := distribution.Invoker{"localhost", 6966}
+	// registers itself on naming service
+	n := service.NamingServiceProxy{"localhost", 3245}
 
-	i.Invoke()
+	fmt.Println(n.Lookup("FilaDoMal"))
+	// starts listening
 }

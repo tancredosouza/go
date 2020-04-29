@@ -6,12 +6,15 @@ import (
 )
 
 func main() {
+	// looks up for stack/queue proxy from remote naming service
+	// unmarshalling
 	s := service.StackProxy{
-		HostIp: "localhost",
-		Port: 6966,
+		HostIp:         "localhost",
+		HostPort:       6966,
 		RemoteObjectId: 1,
 	}
 
+	// runs operations
 	fmt.Println(s.Push(6))
 	fmt.Println(s.Push(2))
 	fmt.Println(s.Push(3))
