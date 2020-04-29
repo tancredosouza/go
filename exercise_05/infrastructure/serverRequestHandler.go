@@ -1,4 +1,4 @@
-package requestHandlers
+package infrastructure
 
 import (
 	"log"
@@ -48,7 +48,7 @@ func (srh ServerRequestHandler) Receive() []byte {
 	}
 
 	// return message
-	clientMsg := make([]byte, 8)
+	clientMsg := make([]byte, 1024)
 	_, err = clientConn.Read(clientMsg)
 	if (err != nil) {
 		log.Fatal("Error while reading message from client. ", err)
