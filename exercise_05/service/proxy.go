@@ -1,9 +1,9 @@
 package service
 
-type Proxy struct {
-	HostIp string
-	Port int
-	RemoteObjectId int
-	TypeName string
+type Proxy interface {
+	RemoveElement() string
+	InsertElement(v int) string
+	GetSize() string
+	GetFirstElement() string
 }
 

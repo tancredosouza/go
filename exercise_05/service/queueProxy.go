@@ -2,36 +2,42 @@ package service
 
 import "../distribution"
 
-type QueueProxy Proxy
+type QueueProxy struct {
+	ProxyName string
+	HostIp         string
+	HostPort       int
+	RemoteObjectId int
+	TypeName string
+}
 
-func (q QueueProxy) Pop() string {
+func (q QueueProxy) RemoveElement() string {
 	inv := distribution.Requester{}
 
-	res := inv.Invoke(q.HostIp, q.Port, q.RemoteObjectId, "pop", []interface{}{})
+	res := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{})
 
 	return res
 }
 
-func (q QueueProxy) Push(v int) string {
+func (q QueueProxy) InsertElement(v int) string {
 	inv := distribution.Requester{}
 
-	res := inv.Invoke(q.HostIp, q.Port, q.RemoteObjectId, "push", []interface{}{v})
+	res := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{v})
 
 	return res
 }
 
-func (q QueueProxy) Front() string {
+func (q QueueProxy) GetFirstElement() string {
 	inv := distribution.Requester{}
 
-	res := inv.Invoke(q.HostIp, q.Port, q.RemoteObjectId, "front", []interface{}{})
+	res := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{})
 
 	return res
 }
 
-func (q QueueProxy) Size() string {
+func (q QueueProxy) GetSize() string {
 	inv := distribution.Requester{}
 
-	res := inv.Invoke(q.HostIp, q.Port, q.RemoteObjectId, "size", []interface{}{})
+	res := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{})
 
 	return res
 }
