@@ -1,9 +1,10 @@
 package common
 
 import (
+	"../packetdef"
+	"bytes"
 	"encoding/json"
 	"log"
-	"../packetdef"
 )
 
 type Marshaller struct{}
@@ -17,9 +18,9 @@ func (t Marshaller) Marshall(data interface{}) []byte {
 	return serializedData
 }
 
-func (t Marshaller) Unmarshall(bytes []byte) packetdef.Packet {
+func (t Marshaller) Unmarshall(b []byte) packetdef.Packet {
 	var data packetdef.Packet
-	err := json.Unmarshal(bytes, &data)
+	err := json.Unmarshal(bytes.Trim(b, "\x00"), &data)
 
 	if (err != nil) {
 		log.Fatal("Error deserializing data. ", err)
