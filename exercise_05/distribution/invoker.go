@@ -1,96 +1,150 @@
 package distribution
 
-import "../requestHandlers"
+import (
+	"../infrastructure"
+	"fmt"
+	"strconv"
+)
 import "../common"
 import "../packetdef"
 
-type invoker struct{}
+type Invoker struct{
+	HostIp string
+	HostPort int
+}
 
 const (
 	STACK_ID = 1
+	QUEUE_ID = 2
 )
 
-var stack []int
+var stack []float64
+var queue []float64
 
-func (i invoker) exec() {
-	srh := new(requestHandlers.ServerRequestHandler)
+func (i Invoker) Invoke() {
+	srh := infrastructure.ServerRequestHandler{
+		ServerHost: i.HostIp,
+		ServerPort: i.HostPort,
+	}
 
 	for {
 		receivedData := srh.Receive()
 
-		// process
-		processedData := process(receivedData)
+		processedData := demuxAndProcess(receivedData)
 
 		srh.Send(processedData)
 	}
 }
 
-func process(data []byte) []byte {
+func demuxAndProcess(data []byte) []byte {
 	m := common.Marshaller{}
 	p := m.Unmarshall(data)
 
 	ans := make([]interface{}, 1)
-	id := p.Body.RequestHeader.RemoteObjectId
+	id := p.Body.RequestHeader.RemoteObjectKey
 
 	// choose operation
 	op := p.Body.RequestHeader.Operation
-	if id == STACK_ID {
-		switch op {
-		case "pop": // pop from stack
-			stack = stack[:len(stack)-1]
-			ans[0] = "Operation successful"
-		case "push":
-			stack = append(stack, p.Body.RequestBody.Data[0].(int))
-			ans[0] = "Operation successful"
-		case "top": // get top
-			ans[0] = stack[len(stack)-1]
-		case "size": // get stack size
-			ans[0] = len(stack)
-		default:
-			// TODO: send error message
-		}
-	} else if id == 2 {
-		// TODO: do something on queue
-	} else {
-		// TODO: send error message
+	var v float64 = 0.0
+
+	if (len(p.Body.RequestBody.Data) != 0) {
+		v = p.Body.RequestBody.Data[0].(float64)
 	}
 
-	//assembly packet
+	var res string = ""
+	var statusCode int
+	if id == STACK_ID {
+		res = onStackPerform(op, v)
+		statusCode = 200
+	} else if id == QUEUE_ID {
+		res = onQueuePerform(op, v)
+		statusCode = 200
+	} else {
+		res = "Invalid object ID"
+		statusCode = 404
+	}
+
+	ans[0] = res
+
 	respHeader := packetdef.ResponseHeader{
-		"", p.Body.RequestHeader.RequestId, 200,
+		RequestId: p.Body.RequestHeader.RequestId, Status: statusCode,
 	}
 
 	respBody := packetdef.ResponseBody{
-		ans,
+		Data: ans,
 	}
+
 	header := packetdef.Header{
 		Magic:   "IF711",
 		Version: "1.0",
 		MsgType: 2,
 	}
 
-	response := packetdef.Packet{header, packetdef.Body{ResponseHeader: respHeader, ResponseBody: respBody}}
+	response := packetdef.Packet{Header: header, Body: packetdef.Body{ResponseHeader: respHeader, ResponseBody: respBody}}
 
-	// return answer
 	return m.Marshall(response)
 }
 
-func operateOnStack(operation string, v int) ([]interface{}, error) {
-	ans := make([]interface{}, 1)
+func onStackPerform(operation string, v float64) string {
+	var ans string
 	switch operation {
-	case "pop": // pop from stack
-		stack = stack[:len(stack)-1]
-		ans[0] = "Operation successful"
+	case "pop":
+		if (len(stack) > 0) {
+			stack = stack[:len(stack)-1]
+			ans = "Operation successful"
+		} else {
+			ans = "Invalid operation. Stack is empty!"
+		}
+		break
 	case "push":
 		stack = append(stack, v)
-		ans[0] = "Operation successful"
-	case "top": // get top
-		ans[0] = stack[len(stack)-1]
-	case "size": // get stack size
-		ans[0] = len(stack)
+		ans = "Operation successful"
+		break
+	case "top":
+		if (len(stack) > 0) {
+			ans = fmt.Sprintf("Top is: %f", stack[len(stack)-1])
+		} else {
+			ans = "Invalid operation. Stack is empty!"
+		}
+		break
+	case "size":
+		ans = "Length is: " + strconv.Itoa(len(stack))
+		break
 	default:
-		// TODO: send error message
+		ans = "Invalid operation."
 	}
 
-	return ans, nil
+	return ans
+}
+
+func onQueuePerform(operation string, v float64) string {
+	var ans string
+	switch operation {
+	case "pop":
+		if (len(queue) > 0) {
+			queue = queue[1:]
+			ans = "Operation successful"
+		} else {
+			ans = "Invalid operation. Queue is empty!"
+		}
+		break
+	case "push":
+		queue = append(queue, v)
+		ans = "Operation successful"
+		break
+	case "front":
+		if (len(queue) > 0) {
+			ans = fmt.Sprintf("Front is: %f", queue[0])
+		} else {
+			ans = "Invalid operation. Queue is empty!"
+		}
+		break
+	case "size":
+		ans = "Length is: " + strconv.Itoa(len(queue))
+		break
+	default:
+		ans = "Invalid operation."
+	}
+
+	return ans
 }
