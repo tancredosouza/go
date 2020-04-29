@@ -21,11 +21,11 @@ type Body struct {
 }
 
 type RequestHeader struct {
-	Context string
-	RequestId int
+	Context         string
+	RequestId       int
 	ExpectsResponse bool
-	RemoteObjectId int
-	Operation string
+	RemoteObjectKey int
+	Operation       string
 }
 
 type RequestBody struct {
