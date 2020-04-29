@@ -1,14 +1,9 @@
 package main
 
-import "../requestHandlers"
+import "../distribution"
 
 func main() {
-	srh := requestHandlers.ServerRequestHandler{"localhost", 6966}
-	srh.StartListening()
+	i := distribution.Invoker{"localhost", 6966}
 
-	for {
-		srh.Receive()
-		ans := []byte("alive")
-		srh.Send(ans)
-	}
+	i.Invoke()
 }

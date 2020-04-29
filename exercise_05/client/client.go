@@ -1,14 +1,29 @@
 package main
 
 import (
-	"../requestHandlers"
-	"log"
+	"../service"
+	"fmt"
 )
 
 func main() {
-	crh := requestHandlers.ClientRequestHandler{"localhost", 6966 }
+	s := service.StackProxy{
+		HostIp: "localhost",
+		Port: 6966,
+		RemoteObjectId: 1,
+	}
 
-	s := crh.SendAndReceive([]byte("olar"))
-
-	log.Println(string(s))
+	fmt.Println(s.Push(6))
+	fmt.Println(s.Push(2))
+	fmt.Println(s.Push(3))
+	fmt.Println(s.Size())
+	fmt.Println(s.Top())
+	fmt.Println(s.Pop())
+	fmt.Println(s.Size())
+	fmt.Println(s.Top())
+	fmt.Println(s.Pop())
+	fmt.Println(s.Top())
+	fmt.Println(s.Pop())
+	fmt.Println(s.Size())
+	fmt.Println(s.Pop())
+	fmt.Println(s.Pop())
 }
