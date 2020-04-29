@@ -1,4 +1,4 @@
-package requestHandlers
+package infrastructure
 
 import (
 	"log"
@@ -29,7 +29,7 @@ func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	}
 
 	// wait for response and return
-	responseMsg := make([]byte, 8)
+	responseMsg := make([]byte, 1024)
 	_, err = conn.Read(responseMsg)
 	if (err != nil) {
 		log.Fatal("Error receiving message from server. ", err)
