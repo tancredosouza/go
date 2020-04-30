@@ -6,27 +6,10 @@ import (
 )
 
 func main() {
-	// looks up for stack/queue proxy from remote naming service
-	// unmarshalling
-	s := service.StackProxy{
-		HostIp:         "localhost",
-		HostPort:       6966,
-		RemoteObjectId: 1,
-	}
+	namingProxy := service.NamingServiceProxy{"localhost", 3999}
+	queueProxy := namingProxy.Lookup("FilaDoMal")
+	stackProxy := namingProxy.Lookup("PilhaDoMal")
 
-	// runs operations
-	fmt.Println(s.Push(6))
-	fmt.Println(s.Push(2))
-	fmt.Println(s.Push(3))
-	fmt.Println(s.Size())
-	fmt.Println(s.Top())
-	fmt.Println(s.Pop())
-	fmt.Println(s.Size())
-	fmt.Println(s.Top())
-	fmt.Println(s.Pop())
-	fmt.Println(s.Top())
-	fmt.Println(s.Pop())
-	fmt.Println(s.Size())
-	fmt.Println(s.Pop())
-	fmt.Println(s.Pop())
+	fmt.Println(queueProxy.GetSize())
+	fmt.Scanln()
 }

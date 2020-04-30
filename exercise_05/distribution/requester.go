@@ -1,14 +1,15 @@
 package distribution
 
-import "../common"
+import "../marshaller"
 import "../infrastructure"
 import "../packetdef"
+import "../constants"
 
 type Requester struct {}
 
-func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) string {
+func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) []interface{} {
 	// create marshaller
-	m := common.Marshaller{}
+	m := marshaller.Marshaller{}
 
 	// declare CRH
 	crh := infrastructure.ClientRequestHandler{
@@ -32,17 +33,17 @@ func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, 
 	header := packetdef.Header{
 		Magic: "IF711",
 		Version: "1.0",
-		MsgType: 11232, //TODO create request type
+		MsgType: constants.REQUEST_TYPE,
 	}
 	body := packetdef.Body{RequestHeader: reqHeader, RequestBody: reqBody}
 
 	packet := packetdef.Packet{Header: header, Body: body}
 
 	// send from CRH
-	data := crh.SendAndReceive(m.Marshall(packet))
+	serializedPacket := crh.SendAndReceive(m.Marshall(packet))
 
-	// receive data
-	resPacket := m.Unmarshall(data)
+	// receive serializedPacket
+	resPacket := m.Unmarshall(serializedPacket)
 
-	return resPacket.Body.ResponseBody.Data[0].(string)
+	return resPacket.Body.ResponseBody.Data
 }

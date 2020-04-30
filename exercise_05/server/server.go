@@ -1,14 +1,26 @@
 package main
 
 import (
+	"../constants"
+	"../distribution"
 	"../service"
 	"fmt"
 )
 
 func main() {
-	// registers itself on naming service
-	n := service.NamingServiceProxy{"localhost", 3245}
+	n := service.NamingServiceProxy{"localhost", 3999}
 
-	fmt.Println(n.Lookup("FilaDoMal"))
-	// starts listening
+	q := service.QueueProxy{"localhost", 9132, constants.QUEUE_ID, "queue"}
+	s := service.StackProxy{"localhost", 9132, constants.STACK_ID, "stack"}
+
+	queue := n.Register("FilaDoMal", q)
+	stk := n.Register("PilhaDoMal", s)
+
+	fmt.Println(queue)
+	fmt.Println(stk)
+
+	inv := distribution.Invoker{"localhost", 9132}
+	inv.Invoke()
+
+	fmt.Scanln()
 }

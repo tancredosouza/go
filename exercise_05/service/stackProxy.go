@@ -3,7 +3,6 @@ package service
 import "../distribution"
 
 type StackProxy struct {
-	ProxyName string
 	HostIp         string
 	HostPort       int
 	RemoteObjectId int
@@ -15,7 +14,7 @@ func (s StackProxy) RemoveElement() string {
 
 	res := inv.Invoke(s.HostIp, s.HostPort, s.RemoteObjectId, "pop", []interface{}{})
 
-	return res
+	return res[0].(string)
 }
 
 func (s StackProxy) InsertElement(v int) string {
@@ -23,7 +22,7 @@ func (s StackProxy) InsertElement(v int) string {
 
 	res := inv.Invoke(s.HostIp, s.HostPort, s.RemoteObjectId, "push", []interface{}{v})
 
-	return res
+	return res[0].(string)
 }
 
 func (s StackProxy) GetFirstElement() string {
@@ -31,7 +30,7 @@ func (s StackProxy) GetFirstElement() string {
 
 	res := inv.Invoke(s.HostIp, s.HostPort, s.RemoteObjectId, "top", []interface{}{})
 
-	return res
+	return res[0].(string)
 }
 
 func (s StackProxy) GetSize() string {
@@ -39,5 +38,5 @@ func (s StackProxy) GetSize() string {
 
 	res := inv.Invoke(s.HostIp, s.HostPort, s.RemoteObjectId, "size", []interface{}{})
 
-	return res
+	return res[0].(string)
 }

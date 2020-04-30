@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 )
-import "../common"
+import "../marshaller"
 import "../packetdef"
 
 type Invoker struct{
@@ -30,14 +30,14 @@ func (i Invoker) Invoke() {
 	for {
 		receivedData := srh.Receive()
 
-		processedData := demuxAndProcess(receivedData)
+		processedData := i.demuxAndProcess(receivedData)
 
 		srh.Send(processedData)
 	}
 }
 
-func demuxAndProcess(data []byte) []byte {
-	m := common.Marshaller{}
+func (Invoker) demuxAndProcess(data []byte) []byte {
+	m := marshaller.Marshaller{}
 	p := m.Unmarshall(data)
 
 	ans := make([]interface{}, 1)
