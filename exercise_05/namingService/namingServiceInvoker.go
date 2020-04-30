@@ -33,13 +33,13 @@ func (i Invoker) Invoke() {
 	for {
 		receivedData := srh.Receive()
 
-		processedData := i.demuxAndProcess(receivedData)
+		processedData := demuxAndProcess(receivedData)
 
 		srh.Send(processedData)
 	}
 }
 
-func (i Invoker) demuxAndProcess(data []byte) []byte {
+func demuxAndProcess(data []byte) []byte {
 	m := marshaller.Marshaller{}
 	p := m.Unmarshall(data)
 
@@ -47,39 +47,41 @@ func (i Invoker) demuxAndProcess(data []byte) []byte {
 	operation := p.Body.RequestHeader.Operation
 
 	var responseBody protocol.ResponseBody
+	var statusCode int
 	switch operation {
 	case "lookup":
-		responseBody = lookupAndPack(proxyName)
+		responseBody, statusCode = lookupAndPack(proxyName)
 		break;
 	case "register":
 		assembledProxy := assembleProxyFromPacket(p)
 		err := namingService.registerProxy(assembledProxy, proxyName)
 		if err != nil {
 			responseBody = protocol.ResponseBody{Data: []interface{}{err}}
+			statusCode = constants.INTERNAL_ERROR
 		} else {
 			responseBody = protocol.ResponseBody{Data: []interface{}{"Successfully registered!"}}
+			statusCode = constants.OK_STATUS
 		}
 		break;
 	default:
 		responseBody = protocol.ResponseBody{Data: []interface{}{fmt.Sprintf("Invalid operation %s!", operation)}}
+		statusCode = constants.INTERNAL_ERROR
 	}
 
-	responseHeader := protocol.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId}
+	responseHeader := protocol.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId, Status: statusCode}
 	packet := assemblePacket(responseHeader, responseBody)
 	serializedPacket := m.Marshall(packet)
 	return serializedPacket
 }
 
-func lookupAndPack(proxyName string) protocol.ResponseBody {
+func lookupAndPack(proxyName string) (protocol.ResponseBody, int) {
 	proxy, err := namingService.lookup(proxyName)
 
-	var responseBody protocol.ResponseBody
 	if err != nil {
-		responseBody = protocol.ResponseBody{Data: []interface{}{proxy}}
+		return protocol.ResponseBody{Data: []interface{}{}}, constants.NOT_FOUND_STATUS
+	} else {
+		return protocol.ResponseBody{Data: []interface{}{proxy}}, constants.OK_STATUS
 	}
-
-	responseBody = protocol.ResponseBody{Data: []interface{}{proxy}}
-	return responseBody
 }
 
 func assembleProxyFromPacket(p protocol.Packet) service.Proxy {

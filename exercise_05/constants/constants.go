@@ -8,4 +8,5 @@ const (
 	REQUEST_TYPE     = 100
 	OK_STATUS        = 200
 	NOT_FOUND_STATUS = 404
+	INTERNAL_ERROR   = 502
 )
