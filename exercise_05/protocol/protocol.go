@@ -1,4 +1,4 @@
-package packetdef
+package protocol
 
 type Packet struct {
 	Header Header

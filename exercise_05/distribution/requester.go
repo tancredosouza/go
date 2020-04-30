@@ -2,7 +2,7 @@ package distribution
 
 import "../marshaller"
 import "../infrastructure"
-import "../packetdef"
+import "../protocol"
 import "../constants"
 
 type Requester struct {}
@@ -18,7 +18,7 @@ func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, 
 	}
 
 	// assemble packet
-	reqHeader := packetdef.RequestHeader{
+	reqHeader := protocol.RequestHeader{
 		Context: "",
 		RequestId: 4242,
 		ExpectsResponse: true,
@@ -26,18 +26,18 @@ func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, 
 		Operation: operation,
 	}
 
-	reqBody := packetdef.RequestBody{
+	reqBody := protocol.RequestBody{
 		Data: param,
 	}
 
-	header := packetdef.Header{
+	header := protocol.Header{
 		Magic: "IF711",
 		Version: "1.0",
 		MsgType: constants.REQUEST_TYPE,
 	}
-	body := packetdef.Body{RequestHeader: reqHeader, RequestBody: reqBody}
+	body := protocol.Body{RequestHeader: reqHeader, RequestBody: reqBody}
 
-	packet := packetdef.Packet{Header: header, Body: body}
+	packet := protocol.Packet{Header: header, Body: body}
 
 	// send from CRH
 	serializedPacket := crh.SendAndReceive(m.Marshall(packet))

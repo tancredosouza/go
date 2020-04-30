@@ -4,7 +4,7 @@ import (
 	"../constants"
 	"../infrastructure"
 	"../marshaller"
-	"../packetdef"
+	"../protocol"
 	"../service"
 	"errors"
 	"fmt"
@@ -46,7 +46,7 @@ func (i Invoker) demuxAndProcess(data []byte) []byte {
 	proxyName := p.Body.RequestBody.Data[0].(string)
 	operation := p.Body.RequestHeader.Operation
 
-	var responseBody packetdef.ResponseBody
+	var responseBody protocol.ResponseBody
 	switch operation {
 	case "lookup":
 		responseBody = lookupAndPack(proxyName)
@@ -55,34 +55,34 @@ func (i Invoker) demuxAndProcess(data []byte) []byte {
 		assembledProxy := assembleProxyFromPacket(p)
 		err := namingService.registerProxy(assembledProxy, proxyName)
 		if err != nil {
-			responseBody = packetdef.ResponseBody{Data: []interface{}{err}}
+			responseBody = protocol.ResponseBody{Data: []interface{}{err}}
 		} else {
-			responseBody = packetdef.ResponseBody{Data: []interface{}{"Successfully registered!"}}
+			responseBody = protocol.ResponseBody{Data: []interface{}{"Successfully registered!"}}
 		}
 		break;
 	default:
-		responseBody = packetdef.ResponseBody{Data: []interface{}{fmt.Sprintf("Invalid operation %s!", operation)}}
+		responseBody = protocol.ResponseBody{Data: []interface{}{fmt.Sprintf("Invalid operation %s!", operation)}}
 	}
 
-	responseHeader := packetdef.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId}
+	responseHeader := protocol.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId}
 	packet := assemblePacket(responseHeader, responseBody)
 	serializedPacket := m.Marshall(packet)
 	return serializedPacket
 }
 
-func lookupAndPack(proxyName string) packetdef.ResponseBody {
+func lookupAndPack(proxyName string) protocol.ResponseBody {
 	proxy, err := namingService.lookup(proxyName)
 
-	var responseBody packetdef.ResponseBody
+	var responseBody protocol.ResponseBody
 	if err != nil {
-		responseBody = packetdef.ResponseBody{Data: []interface{}{proxy}}
+		responseBody = protocol.ResponseBody{Data: []interface{}{proxy}}
 	}
 
-	responseBody = packetdef.ResponseBody{Data: []interface{}{proxy}}
+	responseBody = protocol.ResponseBody{Data: []interface{}{proxy}}
 	return responseBody
 }
 
-func assembleProxyFromPacket(p packetdef.Packet) service.Proxy {
+func assembleProxyFromPacket(p protocol.Packet) service.Proxy {
 	data := p.Body.RequestBody.Data[1].(map[string]interface{})
 	hostIp := data["HostIp"].(string)
 	hostPort := int(data["HostPort"].(float64))
@@ -127,14 +127,14 @@ func (n NamingService) registerProxy(proxy service.Proxy, proxyName string) erro
 	}
 }
 
-func assemblePacket(responseHeader packetdef.ResponseHeader, responseBody packetdef.ResponseBody) packetdef.Packet {
-	body := packetdef.Body{ResponseHeader: responseHeader, ResponseBody: responseBody}
-	header := packetdef.Header{
+func assemblePacket(responseHeader protocol.ResponseHeader, responseBody protocol.ResponseBody) protocol.Packet {
+	body := protocol.Body{ResponseHeader: responseHeader, ResponseBody: responseBody}
+	header := protocol.Header{
 		Magic: "IF711",
 		Version: "1.0",
 	}
 
-	packet := packetdef.Packet{header,body}
+	packet := protocol.Packet{header,body}
 	return packet
 }
 

@@ -7,7 +7,7 @@ import (
 	"strconv"
 )
 import "../marshaller"
-import "../packetdef"
+import "../protocol"
 
 type Invoker struct{
 	HostIp string
@@ -62,21 +62,21 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 
 	ans[0] = res
 
-	respHeader := packetdef.ResponseHeader{
+	respHeader := protocol.ResponseHeader{
 		RequestId: p.Body.RequestHeader.RequestId, Status: statusCode,
 	}
 
-	respBody := packetdef.ResponseBody{
+	respBody := protocol.ResponseBody{
 		Data: ans,
 	}
 
-	header := packetdef.Header{
+	header := protocol.Header{
 		Magic:   "IF711",
 		Version: "1.0",
 		MsgType: 2,
 	}
 
-	response := packetdef.Packet{Header: header, Body: packetdef.Body{ResponseHeader: respHeader, ResponseBody: respBody}}
+	response := protocol.Packet{Header: header, Body: protocol.Body{ResponseHeader: respHeader, ResponseBody: respBody}}
 
 	return m.Marshall(response)
 }

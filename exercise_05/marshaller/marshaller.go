@@ -1,7 +1,7 @@
 package marshaller
 
 import (
-	"../packetdef"
+	"../protocol"
 	"bytes"
 	"encoding/json"
 	"log"
@@ -18,8 +18,8 @@ func (t Marshaller) Marshall(data interface{}) []byte {
 	return serializedData
 }
 
-func (t Marshaller) Unmarshall(b []byte) packetdef.Packet {
-	var data packetdef.Packet
+func (t Marshaller) Unmarshall(b []byte) protocol.Packet {
+	var data protocol.Packet
 	err := json.Unmarshal(bytes.Trim(b, "\x00"), &data)
 
 	if (err != nil) {
