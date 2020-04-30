@@ -1,6 +1,7 @@
 package distribution
 
 import (
+	"../constants"
 	"../infrastructure"
 	"fmt"
 	"strconv"
@@ -12,11 +13,6 @@ type Invoker struct{
 	HostIp string
 	HostPort int
 }
-
-const (
-	STACK_ID = 1
-	QUEUE_ID = 2
-)
 
 var stack []float64
 var queue []float64
@@ -53,15 +49,15 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 
 	var res string = ""
 	var statusCode int
-	if id == STACK_ID {
+	if id == constants.STACK_ID {
 		res = onStackPerform(op, v)
-		statusCode = 200
-	} else if id == QUEUE_ID {
+		statusCode = constants.OK_STATUS
+	} else if id == constants.QUEUE_ID {
 		res = onQueuePerform(op, v)
-		statusCode = 200
+		statusCode = constants.OK_STATUS
 	} else {
 		res = "Invalid object ID"
-		statusCode = 404
+		statusCode = constants.NOT_FOUND_STATUS
 	}
 
 	ans[0] = res
