@@ -3,7 +3,6 @@ package distribution
 import (
 	"../marshaller"
 	"errors"
-	"fmt"
 )
 import "../infrastructure"
 import "../protocol"
@@ -53,6 +52,5 @@ func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, 
 		return resPacket.Body.ResponseBody.Data, errors.New("")
 	}
 
-	fmt.Println("status = ", resPacket.Body.ResponseHeader.Status)
 	return resPacket.Body.ResponseBody.Data, nil
 }
