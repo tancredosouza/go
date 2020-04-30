@@ -8,6 +8,7 @@ import (
 	"../service"
 	"errors"
 	"fmt"
+	"log"
 )
 
 type NamingService struct {
@@ -16,12 +17,12 @@ type NamingService struct {
 
 var namingService NamingService
 
-type NamingServiceInvoker struct{
+type Invoker struct{
 	HostIp string
 	HostPort int
 }
 
-func (i NamingServiceInvoker) Invoke() {
+func (i Invoker) Invoke() {
 	namingService = NamingService{map[string]service.Proxy{}}
 
 	srh := infrastructure.ServerRequestHandler{
@@ -38,92 +39,75 @@ func (i NamingServiceInvoker) Invoke() {
 	}
 }
 
-func (NamingServiceInvoker) demuxAndProcess(data []byte) []byte {
+func (i Invoker) demuxAndProcess(data []byte) []byte {
 	m := marshaller.Marshaller{}
 	p := m.Unmarshall(data)
 
-	name := p.Body.RequestBody.Data[0].(string)
-	op := p.Body.RequestHeader.Operation
+	proxyName := p.Body.RequestBody.Data[0].(string)
+	operation := p.Body.RequestHeader.Operation
 
-	switch op {
+	var responseBody packetdef.ResponseBody
+	switch operation {
 	case "lookup":
-		proxy, err := namingService.lookup(name)
-
-		if err != nil {
-			return []byte(fmt.Sprint(err))
-		}
-
-		b := packetdef.ResponseBody{
-			Data: []interface{}{proxy},
-		}
-		h := packetdef.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId}
-		body := packetdef.Body{ResponseHeader: h, ResponseBody: b}
-		header := packetdef.Header{
-			Magic: "IF711",
-			Version: "1.0",
-		}
-
-		packet := packetdef.Packet{header,body}
-
-		return m.Marshall(packet)
+		responseBody = lookupAndPack(proxyName)
+		break;
 	case "register":
-		i := p.Body.RequestBody.Data[1].(map[string]interface{})
-		ip := i["HostIp"].(string)
-		t := i["TypeName"].(string)
-		port := int(i["HostPort"].(float64))
-
-		var err error
-		var res string
-		if t == constants.QUEUE_TYPE {
-			err = namingService.registerProxy(
-				service.QueueProxy{
-					HostIp: ip,
-					HostPort: port,
-					TypeName: t,
-					RemoteObjectId: constants.QUEUE_ID}, name)
-		}
-
-		if t == constants.STACK_TYPE {
-			err = namingService.registerProxy(
-				service.StackProxy{
-					HostIp: ip,
-					HostPort: port,
-					TypeName: t,
-					RemoteObjectId: constants.STACK_ID}, name)
-		}
-
+		assembledProxy := assembleProxyFromPacket(p)
+		err := namingService.registerProxy(assembledProxy, proxyName)
 		if err != nil {
-			res = fmt.Sprint(err)
+			responseBody = packetdef.ResponseBody{Data: []interface{}{err}}
 		} else {
-			res = "Successfully registered!"
+			responseBody = packetdef.ResponseBody{Data: []interface{}{"Successfully registered!"}}
 		}
-
-		b := packetdef.ResponseBody{
-			Data: []interface{}{res},
-		}
-		h := packetdef.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId}
-		body := packetdef.Body{ResponseHeader: h, ResponseBody: b}
-		header := packetdef.Header{
-			Magic: "IF711",
-			Version: "1.0",
-		}
-
-		packet := packetdef.Packet{header,body}
-
-		return m.Marshall(packet)
+		break;
+	default:
+		responseBody = packetdef.ResponseBody{Data: []interface{}{fmt.Sprintf("Invalid operation %s!", operation)}}
 	}
 
-	return []byte(fmt.Sprintf("Invalid operation %s!", op))
+	responseHeader := packetdef.ResponseHeader{RequestId: p.Body.RequestHeader.RequestId}
+	packet := assemblePacket(responseHeader, responseBody)
+	serializedPacket := m.Marshall(packet)
+	return serializedPacket
 }
 
+func lookupAndPack(proxyName string) packetdef.ResponseBody {
+	proxy, err := namingService.lookup(proxyName)
 
-func (n NamingService) registerProxy(proxy service.Proxy, proxyName string) error {
-	if _, isNameRegistered := n.data[proxyName]; !isNameRegistered {
-		n.data[proxyName] = proxy
-		return nil
-	} else {
-		return errors.New(fmt.Sprintf("Name %s already registered!", proxyName))
+	var responseBody packetdef.ResponseBody
+	if err != nil {
+		responseBody = packetdef.ResponseBody{Data: []interface{}{proxy}}
 	}
+
+	responseBody = packetdef.ResponseBody{Data: []interface{}{proxy}}
+	return responseBody
+}
+
+func assembleProxyFromPacket(p packetdef.Packet) service.Proxy {
+	data := p.Body.RequestBody.Data[1].(map[string]interface{})
+	hostIp := data["HostIp"].(string)
+	hostPort := int(data["HostPort"].(float64))
+	proxyType := data["TypeName"].(string)
+
+	if proxyType == constants.QUEUE_TYPE {
+			return service.QueueProxy{
+				HostIp:         hostIp,
+				HostPort:       hostPort,
+				TypeName:       proxyType,
+				RemoteObjectId: constants.QUEUE_ID,
+			}
+	}
+
+	if proxyType == constants.STACK_TYPE {
+		return service.StackProxy{
+				HostIp:         hostIp,
+				HostPort:       hostPort,
+				TypeName:       proxyType,
+				RemoteObjectId: constants.STACK_ID,
+		}
+	}
+
+	log.Panic("Invalid proxyType ", proxyType)
+	return nil
 }
 
 func (n NamingService) lookup(proxyName string) (service.Proxy, error) {
@@ -134,7 +118,29 @@ func (n NamingService) lookup(proxyName string) (service.Proxy, error) {
 	}
 }
 
+func (n NamingService) registerProxy(proxy service.Proxy, proxyName string) error {
+	if _, isNameRegistered := n.data[proxyName]; !isNameRegistered {
+		n.data[proxyName] = proxy
+		return nil
+	} else {
+		return errors.New(fmt.Sprintf("Name %s already registered!", proxyName))
+	}
+}
+
+func assemblePacket(responseHeader packetdef.ResponseHeader, responseBody packetdef.ResponseBody) packetdef.Packet {
+	body := packetdef.Body{ResponseHeader: responseHeader, ResponseBody: responseBody}
+	header := packetdef.Header{
+		Magic: "IF711",
+		Version: "1.0",
+	}
+
+	packet := packetdef.Packet{header,body}
+	return packet
+}
+
+
 func (n NamingService) listProxies() {
+	// TODO IMPLEMENT FUNCTION
 	for name, proxy := range n.data {
 		fmt.Sprintf("[%s -> %s]\n", name, proxy)
 	}
