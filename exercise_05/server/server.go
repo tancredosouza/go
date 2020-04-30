@@ -13,11 +13,11 @@ func main() {
 	q := service.QueueProxy{"localhost", 9132, constants.QUEUE_ID, "queue"}
 	s := service.StackProxy{"localhost", 9132, constants.STACK_ID, "stack"}
 
-	queue := n.Register("FilaDoMal", q)
-	stk := n.Register("PilhaDoMal", s)
+	res := n.Register("app.Queue", q)
+	fmt.Println(res)
 
-	fmt.Println(queue)
-	fmt.Println(stk)
+	res  = n.Register("app.Stack", s)
+	fmt.Println(res)
 
 	inv := distribution.Invoker{"localhost", 9132}
 	inv.Invoke()
