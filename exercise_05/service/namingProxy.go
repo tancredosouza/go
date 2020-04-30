@@ -2,6 +2,8 @@ package service
 
 import (
 	"../distribution"
+	"fmt"
+	"log"
 )
 
 type NamingServiceProxy struct {
@@ -10,35 +12,45 @@ type NamingServiceProxy struct {
 }
 
 func (n NamingServiceProxy) Register(proxyName string, proxy Proxy) string {
-	res := distribution.Requester{}.Invoke(
+	res, err := distribution.Requester{}.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
 		"register",
 		[]interface{}{proxyName, proxy})
 
+	if (err != nil) {
+		log.Fatal(fmt.Sprintf("An error occurred during registration: %s", res))
+	}
+
 	return res[0].(string)
 }
 
 func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
-	res := distribution.Requester{}.Invoke(
+	res, err := distribution.Requester{}.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
 		"lookup",
-		[]interface{}{proxyName})[0].(map[string]interface{})
+		[]interface{}{proxyName})
 
-	if (res["TypeName"] == "queue") {
+	if (err != nil) {
+		log.Fatal("Lookup error. ", res)
+	}
+
+	mappedProxy := res[0].(map[string]interface{})
+
+	if (mappedProxy["TypeName"] == "queue") {
 		return QueueProxy{
-			res["HostIp"].(string),
-			int(res["HostPort"].(float64)),
-			int(res["RemoteObjectId"].(float64)),
-			res["TypeName"].(string)}
+			mappedProxy["HostIp"].(string),
+			int(mappedProxy["HostPort"].(float64)),
+			int(mappedProxy["RemoteObjectId"].(float64)),
+			mappedProxy["TypeName"].(string)}
 	} else {
 		return StackProxy{
-			res["HostIp"].(string),
-			int(res["HostPort"].(float64)),
-			int(res["RemoteObjectId"].(float64)),
-			res["TypeName"].(string)}
+			mappedProxy["HostIp"].(string),
+			int(mappedProxy["HostPort"].(float64)),
+			int(mappedProxy["RemoteObjectId"].(float64)),
+			mappedProxy["TypeName"].(string)}
 	}
 }

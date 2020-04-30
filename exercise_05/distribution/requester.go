@@ -1,13 +1,17 @@
 package distribution
 
-import "../marshaller"
+import (
+	"../marshaller"
+	"errors"
+	"fmt"
+)
 import "../infrastructure"
 import "../protocol"
 import "../constants"
 
 type Requester struct {}
 
-func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) []interface{} {
+func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) ([]interface{}, error) {
 	// create marshaller
 	m := marshaller.Marshaller{}
 
@@ -44,6 +48,11 @@ func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, 
 
 	// receive serializedPacket
 	resPacket := m.Unmarshall(serializedPacket)
+	status := resPacket.Body.ResponseHeader.Status
+	if (status != constants.OK_STATUS) {
+		return resPacket.Body.ResponseBody.Data, errors.New("")
+	}
 
-	return resPacket.Body.ResponseBody.Data
+	fmt.Println("status = ", resPacket.Body.ResponseHeader.Status)
+	return resPacket.Body.ResponseBody.Data, nil
 }

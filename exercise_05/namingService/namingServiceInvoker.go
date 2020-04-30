@@ -56,7 +56,7 @@ func demuxAndProcess(data []byte) []byte {
 		assembledProxy := assembleProxyFromPacket(p)
 		err := namingService.registerProxy(assembledProxy, proxyName)
 		if err != nil {
-			responseBody = protocol.ResponseBody{Data: []interface{}{err}}
+			responseBody = protocol.ResponseBody{Data: []interface{}{err.Error()}}
 			statusCode = constants.INTERNAL_ERROR
 		} else {
 			responseBody = protocol.ResponseBody{Data: []interface{}{"Successfully registered!"}}
