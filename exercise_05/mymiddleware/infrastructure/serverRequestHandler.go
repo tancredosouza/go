@@ -22,14 +22,13 @@ time. To solve this problem, the function below could be
 used instead. However, this would require the Distribution
 Layer to explicitly start the SRH, breaking the management
 isolation provided by the layered architecture.
-
+*/
 func (srh ServerRequestHandler) StartListening() {
 	listener, err = net.Listen("tcp", srh.GetAddr())
 	if (err != nil) {
 		log.Fatal("Error while creating listener. ", err)
 	}
 }
-*/
 
 func (srh ServerRequestHandler) GetAddr() string {
 	return srh.ServerHost + ":" + strconv.Itoa(srh.ServerPort)
@@ -37,10 +36,7 @@ func (srh ServerRequestHandler) GetAddr() string {
 
 func (srh ServerRequestHandler) Receive() []byte {
 	// get message
-	listener, err = net.Listen("tcp", srh.GetAddr())
-	if (err != nil) {
-		log.Fatal("Error while creating listener. ", err)
-	}
+	//srh.StartListening()
 
 	clientConn, err = listener.Accept()
 	if (err != nil) {
@@ -48,7 +44,7 @@ func (srh ServerRequestHandler) Receive() []byte {
 	}
 
 	// return message
-	clientMsg := make([]byte, 1024)
+	clientMsg := make([]byte, 512)
 	_, err = clientConn.Read(clientMsg)
 	if (err != nil) {
 		log.Fatal("Error while reading message from client. ", err)
@@ -65,5 +61,13 @@ func (srh ServerRequestHandler) Send(msg []byte) {
 	}
 
 	clientConn.Close()
-	listener.Close()
+	//srh.StopListening()
+}
+
+func (srh ServerRequestHandler) StopListening() {
+	err := listener.Close()
+
+	if (err != nil) {
+		log.Fatal("Error closing listener. ", err)
+	}
 }
