@@ -30,6 +30,8 @@ func (i Invoker) Invoke() {
 		ServerPort: i.HostPort,
 	}
 
+	srh.StartListening()
+
 	for {
 		receivedData := srh.Receive()
 
@@ -37,6 +39,8 @@ func (i Invoker) Invoke() {
 
 		srh.Send(processedData)
 	}
+
+	srh.StopListening()
 }
 
 func demuxAndProcess(data []byte) []byte {
