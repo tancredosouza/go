@@ -17,10 +17,16 @@ func (crh ClientRequestHandler) GetAddr() string {
 
 func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	// stablish socket connection
-	conn, err := net.Dial("tcp", crh.GetAddr())
-	if (err != nil) {
-		log.Fatal("Error establishing TCP connection with server. ", err)
+	// connect to server
+	var conn net.Conn
+	var err error
+	for {
+		conn, err = net.Dial("tcp", crh.GetAddr())
+		if err == nil {
+			break
+		}
 	}
+	defer conn.Close()
 
 	// send message
 	_, err = conn.Write(msgToSend)
@@ -29,7 +35,7 @@ func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	}
 
 	// wait for response and return
-	responseMsg := make([]byte, 1024)
+	responseMsg := make([]byte, 512)
 	_, err = conn.Read(responseMsg)
 	if (err != nil) {
 		log.Fatal("Error receiving message from server. ", err)
