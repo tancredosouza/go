@@ -3,15 +3,28 @@ package main
 import (
 	"../service"
 	"fmt"
+	"os"
+	"time"
 )
 
 func main() {
+	outputFile, _ := os.Create("timemymiddleware_seconds.txt")
+
 	namingProxy := service.NamingServiceProxy{"localhost", 3999}
-	queueProxy := namingProxy.Lookup("app.Queue")
 	stackProxy := namingProxy.Lookup("app.Stack")
 
-	test(queueProxy)
-	test(stackProxy)
+	stackProxy.InsertElement(33)
+
+	for i:=0; i<10000;i++ {
+		st := time.Now()
+		stackProxy.GetFirstElement()
+
+		end := time.Since(st)
+		fmt.Fprintln(outputFile, end.Seconds())
+		fmt.Println(i)
+		t := float64(time.Second) * 0.01
+		time.Sleep(time.Duration(t))
+	}
 }
 
 func test(proxy service.Proxy) {
