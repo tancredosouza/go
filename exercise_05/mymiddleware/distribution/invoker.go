@@ -1,21 +1,21 @@
 package distribution
 
 import (
-	"../constants"
-	"../infrastructure"
 	"fmt"
+	"github.com/my/repo/mymiddleware/constants"
+	"github.com/my/repo/mymiddleware/infrastructure"
+	"github.com/my/repo/mymiddleware/marshaller"
+	"github.com/my/repo/mymiddleware/protocol"
 	"strconv"
 )
-import "../marshaller"
-import "../protocol"
 
 type Invoker struct{
 	HostIp string
 	HostPort int
 }
 
-var stack []float64
-var queue []float64
+var stack []int64
+var queue []int64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
@@ -24,11 +24,14 @@ func (i Invoker) Invoke() {
 	}
 
 	srh.StartListening()
+	srh.StartConnection()
 	for {
+		//log.Println("Waiting to receive data from client")
 		receivedData := srh.Receive()
 
 		processedData := i.demuxAndProcess(receivedData)
 
+		//log.Println("Sending data to client")
 		srh.Send(processedData)
 	}
 
@@ -44,10 +47,10 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 
 	// choose operation
 	op := p.Body.RequestHeader.Operation
-	var v float64 = 0.0
+	var v int64 = 0
 
 	if (len(p.Body.RequestBody.Data) != 0) {
-		v = p.Body.RequestBody.Data[0].(float64)
+		v = p.Body.RequestBody.Data[0].(int64)
 	}
 
 	var res string = ""
@@ -84,7 +87,7 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 	return m.Marshall(response)
 }
 
-func onStackPerform(operation string, v float64) string {
+func onStackPerform(operation string, v int64) string {
 	var ans string
 	switch operation {
 	case "pop":
@@ -116,7 +119,7 @@ func onStackPerform(operation string, v float64) string {
 	return ans
 }
 
-func onQueuePerform(operation string, v float64) string {
+func onQueuePerform(operation string, v int64) string {
 	var ans string
 	switch operation {
 	case "pop":
