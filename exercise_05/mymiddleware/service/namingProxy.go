@@ -1,8 +1,8 @@
 package service
 
 import (
-	"../distribution"
 	"fmt"
+	"github.com/my/repo/mymiddleware/distribution"
 	"log"
 )
 
@@ -11,8 +11,15 @@ type NamingServiceProxy struct {
 	NamingServicePort int
 }
 
+var namingProxyRequester *distribution.Requester
+
 func (n NamingServiceProxy) Register(proxyName string, proxy Proxy) string {
-	res, err := distribution.Requester{}.Invoke(
+	if (namingProxyRequester == nil) {
+		//log.Println("Creating requester")
+		namingProxyRequester = &distribution.Requester{}
+	}
+
+	res, err := namingProxyRequester.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
@@ -27,7 +34,11 @@ func (n NamingServiceProxy) Register(proxyName string, proxy Proxy) string {
 }
 
 func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
-	res, err := distribution.Requester{}.Invoke(
+	if (namingProxyRequester == nil) {
+		namingProxyRequester = &distribution.Requester{}
+	}
+
+	res, err := namingProxyRequester.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
@@ -42,15 +53,15 @@ func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
 
 	if (mappedProxy["TypeName"] == "queue") {
 		return QueueProxy{
-			mappedProxy["HostIp"].(string),
-			int(mappedProxy["HostPort"].(float64)),
-			int(mappedProxy["RemoteObjectId"].(float64)),
-			mappedProxy["TypeName"].(string)}
+			HostIp: mappedProxy["HostIp"].(string),
+			HostPort: int(mappedProxy["HostPort"].(int64)),
+			RemoteObjectId:int(mappedProxy["RemoteObjectId"].(int64)),
+			TypeName: mappedProxy["TypeName"].(string)}
 	} else {
 		return StackProxy{
-			mappedProxy["HostIp"].(string),
-			int(mappedProxy["HostPort"].(float64)),
-			int(mappedProxy["RemoteObjectId"].(float64)),
-			mappedProxy["TypeName"].(string)}
+			HostIp: mappedProxy["HostIp"].(string),
+			HostPort: int(mappedProxy["HostPort"].(int64)),
+			RemoteObjectId: int(mappedProxy["RemoteObjectId"].(int64)),
+			TypeName: mappedProxy["TypeName"].(string)}
 	}
 }
