@@ -1,8 +1,8 @@
 package main
 
 import (
-	"../service"
 	"fmt"
+	"github.com/my/repo/mymiddleware/service"
 	"os"
 	"time"
 )
@@ -10,10 +10,10 @@ import (
 func main() {
 	outputFile, _ := os.Create("timemymiddleware_seconds.txt")
 
-	namingProxy := service.NamingServiceProxy{"localhost", 3999}
+	namingProxy := service.NamingServiceProxy{NamingServiceIp:"localhost", NamingServicePort:3999}
 	stackProxy := namingProxy.Lookup("app.Stack")
 
-	stackProxy.InsertElement(33)
+	fmt.Println(stackProxy.InsertElement(33))
 
 	for i:=0; i<10000;i++ {
 		st := time.Now()

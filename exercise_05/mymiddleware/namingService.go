@@ -1,6 +1,6 @@
 package main
 
-import "./namingService"
+import "github.com/my/repo/mymiddleware/namingService"
 
 func main() {
 	inv := namingService.Invoker{"localhost",3999}
