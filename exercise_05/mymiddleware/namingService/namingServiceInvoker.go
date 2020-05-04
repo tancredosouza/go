@@ -1,13 +1,13 @@
 package namingService
 
 import (
-	"../constants"
-	"../infrastructure"
-	"../marshaller"
-	"../protocol"
-	"../service"
 	"errors"
 	"fmt"
+	"github.com/my/repo/mymiddleware/constants"
+	"github.com/my/repo/mymiddleware/infrastructure"
+	"github.com/my/repo/mymiddleware/marshaller"
+	"github.com/my/repo/mymiddleware/protocol"
+	"github.com/my/repo/mymiddleware/service"
 	"log"
 )
 
@@ -30,14 +30,16 @@ func (i Invoker) Invoke() {
 		ServerPort: i.HostPort,
 	}
 
-	srh.StartListening()
 
+	srh.StartListening()
 	for {
+		srh.StartConnection()
 		receivedData := srh.Receive()
 
 		processedData := demuxAndProcess(receivedData)
 
 		srh.Send(processedData)
+		srh.CloseConnection()
 	}
 
 	srh.StopListening()
@@ -91,7 +93,7 @@ func lookupAndPack(proxyName string) (protocol.ResponseBody, int) {
 func assembleProxyFromPacket(p protocol.Packet) service.Proxy {
 	data := p.Body.RequestBody.Data[1].(map[string]interface{})
 	hostIp := data["HostIp"].(string)
-	hostPort := int(data["HostPort"].(float64))
+	hostPort := int(data["HostPort"].(int64))
 	proxyType := data["TypeName"].(string)
 
 	if proxyType == constants.QUEUE_TYPE {
