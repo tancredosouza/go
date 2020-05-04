@@ -11,6 +11,8 @@ type ClientRequestHandler struct {
 	ServerPort int
 }
 
+var conn net.Conn = nil
+
 func (crh ClientRequestHandler) GetAddr() string {
 	return crh.ServerHost + ":" + strconv.Itoa(crh.ServerPort)
 }
@@ -18,15 +20,17 @@ func (crh ClientRequestHandler) GetAddr() string {
 func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	// stablish socket connection
 	// connect to server
-	var conn net.Conn
-	var err error
-	for {
-		conn, err = net.Dial("tcp", crh.GetAddr())
-		if err == nil {
-			break
+	if (conn == nil) {
+		//log.Println("Initializing client connection")
+		for {
+			conn, err = net.Dial("tcp", crh.GetAddr())
+			if err == nil {
+				break
+			}
+			log.Println(err)
 		}
 	}
-	defer conn.Close()
+	//defer conn.Close()
 
 	// send message
 	_, err = conn.Write(msgToSend)
@@ -36,10 +40,15 @@ func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 
 	// wait for response and return
 	responseMsg := make([]byte, 512)
-	_, err = conn.Read(responseMsg)
+	_, err := conn.Read(responseMsg)
 	if (err != nil) {
 		log.Fatal("Error receiving message from server. ", err)
 	}
 
 	return responseMsg
+}
+
+func (ClientRequestHandler) CloseConnection() {
+	conn.Close()
+	conn = nil
 }
