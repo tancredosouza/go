@@ -1,22 +1,22 @@
 package main
 
 import (
-	"../constants"
-	"../distribution"
-	"../service"
 	"fmt"
+	"github.com/my/repo/mymiddleware/constants"
+	"github.com/my/repo/mymiddleware/distribution"
+	"github.com/my/repo/mymiddleware/service"
 )
 
 func main() {
-	n := service.NamingServiceProxy{"localhost", 3999}
+	n := service.NamingServiceProxy{NamingServiceIp: "localhost", NamingServicePort: 3999}
 
-	q := service.QueueProxy{"localhost", 9132, constants.QUEUE_ID, "queue"}
-	s := service.StackProxy{"localhost", 9132, constants.STACK_ID, "stack"}
+	q := service.QueueProxy{HostIp: "localhost", HostPort: 9132, RemoteObjectId: constants.QUEUE_ID, TypeName: "queue"}
+	s := service.StackProxy{HostIp:"localhost",HostPort: 9132,RemoteObjectId: constants.STACK_ID, TypeName: "stack"}
 
-	res := n.Register("app.Queue", q)
+	res := n.Register("app.Stack", s)
 	fmt.Println(res)
 
-	res  = n.Register("app.Stack", s)
+	res = n.Register("app.Queue", q)
 	fmt.Println(res)
 
 	inv := distribution.Invoker{"localhost", 9132}
