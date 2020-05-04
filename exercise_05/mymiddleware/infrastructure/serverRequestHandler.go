@@ -30,15 +30,18 @@ func (srh ServerRequestHandler) StartListening() {
 	}
 }
 
+func (srh ServerRequestHandler) StartConnection() {
+	clientConn, err = listener.Accept()
+	if (err != nil) {
+		log.Fatal("Error while accepting connection ", err)
+	}
+}
+
 func (srh ServerRequestHandler) GetAddr() string {
 	return srh.ServerHost + ":" + strconv.Itoa(srh.ServerPort)
 }
 
 func (srh ServerRequestHandler) Receive() []byte {
-	// get message
-	//srh.StartListening()
-
-	clientConn, err = listener.Accept()
 	if (err != nil) {
 		log.Fatal("Error while accepting client connection. ", err)
 	}
@@ -60,8 +63,11 @@ func (srh ServerRequestHandler) Send(msg []byte) {
 		log.Fatal("Error writing response to client. ", err)
 	}
 
-	clientConn.Close()
 	//srh.StopListening()
+}
+
+func (srh ServerRequestHandler) CloseConnection() {
+	clientConn.Close()
 }
 
 func (srh ServerRequestHandler) StopListening() {
