@@ -1,23 +1,28 @@
 package distribution
 
 import (
-	"../marshaller"
 	"errors"
+	"github.com/my/repo/mymiddleware/constants"
+	"github.com/my/repo/mymiddleware/infrastructure"
+	"github.com/my/repo/mymiddleware/marshaller"
+	"github.com/my/repo/mymiddleware/protocol"
 )
-import "../infrastructure"
-import "../protocol"
-import "../constants"
 
-type Requester struct {}
+type Requester struct {
+}
 
-func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) ([]interface{}, error) {
+var crh *infrastructure.ClientRequestHandler
+func (r Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) ([]interface{}, error) {
 	// create marshaller
 	m := marshaller.Marshaller{}
 
 	// declare CRH
-	crh := infrastructure.ClientRequestHandler{
-		ServerHost: serverHost,
-		ServerPort: serverPort,
+	if (crh == nil) {
+		//log.Println("Declare crh")
+		crh = &infrastructure.ClientRequestHandler{
+			ServerHost: serverHost,
+			ServerPort: serverPort,
+		}
 	}
 
 	// assemble packet
@@ -44,6 +49,11 @@ func (Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, 
 
 	// send from CRH
 	serializedPacket := crh.SendAndReceive(m.Marshall(packet))
+
+	if (operation == "register" || operation == "lookup") {
+		crh.CloseConnection()
+		crh = nil
+	}
 
 	// receive serializedPacket
 	resPacket := m.Unmarshall(serializedPacket)
