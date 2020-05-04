@@ -1,7 +1,7 @@
 package service
 
 import (
-	"../distribution"
+	"github.com/my/repo/mymiddleware/distribution"
 	"log"
 )
 
@@ -11,11 +11,14 @@ type QueueProxy struct {
 	RemoteObjectId int
 	TypeName string
 }
+var requester *distribution.Requester = nil
 
 func (q QueueProxy) RemoveElement() string {
-	inv := distribution.Requester{}
+	if (requester == nil) {
+		requester = &distribution.Requester{}
+	}
 
-	res, err := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -24,9 +27,11 @@ func (q QueueProxy) RemoveElement() string {
 }
 
 func (q QueueProxy) InsertElement(v int) string {
-	inv := distribution.Requester{}
+	if (requester == nil) {
+		requester = &distribution.Requester{}
+	}
 
-	res, err := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{v})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{v})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -35,9 +40,11 @@ func (q QueueProxy) InsertElement(v int) string {
 }
 
 func (q QueueProxy) GetFirstElement() string {
-	inv := distribution.Requester{}
+	if (requester == nil) {
+		requester = &distribution.Requester{}
+	}
 
-	res, err := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -46,9 +53,11 @@ func (q QueueProxy) GetFirstElement() string {
 }
 
 func (q QueueProxy) GetSize() string {
-	inv := distribution.Requester{}
+	if (requester == nil) {
+		requester = &distribution.Requester{}
+	}
 
-	res, err := inv.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
