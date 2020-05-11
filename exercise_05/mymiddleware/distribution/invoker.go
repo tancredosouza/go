@@ -20,7 +20,7 @@ type Queue struct {
 	data []int64
 }
 
-var queues []Queue
+var queues map[int]Queue = make(map[int]Queue)
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
@@ -32,7 +32,7 @@ func (i Invoker) Invoke() {
 	var clientId = 0
 	for {
 		srh.AcceptNewConnection()
-		queues = append(queues, Queue{})
+		queues[clientId] = Queue{}
 		go i.handleNewClientConnection(srh, clientId)
 		clientId++
 	}
@@ -138,14 +138,14 @@ func onQueuePerform(operation string, v int64, clientId int) string {
 	switch operation {
 	case "pop":
 		if (len(queues[clientId].data) > 0) {
-			queues[clientId].data = queues[clientId].data[1:]
+			queues[clientId] = Queue{queues[clientId].data[1:]}
 			ans = "Operation successful"
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "push":
-		queues[clientId].data = append(queues[clientId].data, v)
+		queues[clientId] = Queue{append(queues[clientId].data, v)}
 		ans = "Operation successful"
 		break
 	case "front":
