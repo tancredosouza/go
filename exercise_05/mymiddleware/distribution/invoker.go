@@ -15,7 +15,12 @@ type Invoker struct{
 }
 
 var stack []int64
-var queue []int64
+
+type Queue struct {
+	data []int64
+}
+
+var queues []Queue
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
@@ -24,12 +29,21 @@ func (i Invoker) Invoke() {
 	}
 
 	srh.StartListening()
-	srh.StartConnection()
+	var clientId = 0
+	for {
+		srh.AcceptNewConnection()
+		queues = append(queues, Queue{})
+		go i.handleNewClientConnection(srh, clientId)
+		clientId++
+	}
+}
+
+func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler, clientId int) {
 	for {
 		//log.Println("Waiting to receive data from client")
 		receivedData := srh.Receive()
 
-		processedData := i.demuxAndProcess(receivedData)
+		processedData := i.demuxAndProcess(receivedData, clientId)
 
 		//log.Println("Sending data to client")
 		srh.Send(processedData)
@@ -38,7 +52,7 @@ func (i Invoker) Invoke() {
 	srh.StopListening()
 }
 
-func (Invoker) demuxAndProcess(data []byte) []byte {
+func (Invoker) demuxAndProcess(data []byte, clientId int) []byte {
 	m := marshaller.Marshaller{}
 	p := m.Unmarshall(data)
 
@@ -59,7 +73,7 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 		res = onStackPerform(op, v)
 		statusCode = constants.OK_STATUS
 	} else if id == constants.QUEUE_ID {
-		res = onQueuePerform(op, v)
+		res = onQueuePerform(op, v, clientId)
 		statusCode = constants.OK_STATUS
 	} else {
 		res = "Invalid object ID"
@@ -119,30 +133,30 @@ func onStackPerform(operation string, v int64) string {
 	return ans
 }
 
-func onQueuePerform(operation string, v int64) string {
+func onQueuePerform(operation string, v int64, clientId int) string {
 	var ans string
 	switch operation {
 	case "pop":
-		if (len(queue) > 0) {
-			queue = queue[1:]
+		if (len(queues[clientId].data) > 0) {
+			queues[clientId].data = queues[clientId].data[1:]
 			ans = "Operation successful"
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "push":
-		queue = append(queue, v)
+		queues[clientId].data = append(queues[clientId].data, v)
 		ans = "Operation successful"
 		break
 	case "front":
-		if (len(queue) > 0) {
-			ans = fmt.Sprintf("Front is: %f", queue[0])
+		if (len(queues[clientId].data) > 0) {
+			ans = fmt.Sprintf("Front is: %f", queues[clientId].data[0])
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "size":
-		ans = "Length is: " + strconv.Itoa(len(queue))
+		ans = "Length is: " + strconv.Itoa(len(queues[clientId].data))
 		break
 	default:
 		ans = "Invalid operation."
