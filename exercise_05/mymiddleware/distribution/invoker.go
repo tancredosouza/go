@@ -36,12 +36,18 @@ func (i Invoker) Invoke() {
 		go i.handleNewClientConnection(srh, clientId)
 		clientId++
 	}
+
+	srh.StopListening()
 }
 
 func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler, clientId int) {
 	for {
 		//log.Println("Waiting to receive data from client")
-		receivedData := srh.Receive()
+		receivedData, err := srh.Receive()
+		if (err != nil) {
+			delete(queues, clientId)
+			break;
+		}
 
 		processedData := i.demuxAndProcess(receivedData, clientId)
 
@@ -49,7 +55,7 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 		srh.Send(processedData)
 	}
 
-	srh.StopListening()
+	srh.CloseConnection()
 }
 
 func (Invoker) demuxAndProcess(data []byte, clientId int) []byte {
