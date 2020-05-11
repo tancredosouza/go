@@ -11,13 +11,14 @@ func main() {
 	outputFile, _ := os.Create("timemymiddleware_seconds.txt")
 
 	namingProxy := service.NamingServiceProxy{NamingServiceIp:"localhost", NamingServicePort:3999}
-	stackProxy := namingProxy.Lookup("app.Stack")
+	queueProxy := namingProxy.Lookup("app.Queue")
 
-	fmt.Println(stackProxy.InsertElement(33))
+	fmt.Println(queueProxy.GetFirstElement())
+	return;
 
 	for i:=0; i<10000;i++ {
 		st := time.Now()
-		stackProxy.GetFirstElement()
+		queueProxy.GetFirstElement()
 
 		end := time.Since(st)
 		fmt.Fprintln(outputFile, end.Seconds())
