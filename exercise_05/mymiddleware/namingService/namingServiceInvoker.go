@@ -33,7 +33,7 @@ func (i Invoker) Invoke() {
 
 	srh.StartListening()
 	for {
-		srh.StartConnection()
+		srh.AcceptNewConnection()
 		receivedData := srh.Receive()
 
 		processedData := demuxAndProcess(receivedData)

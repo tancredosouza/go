@@ -30,7 +30,7 @@ func (srh ServerRequestHandler) StartListening() {
 	}
 }
 
-func (srh ServerRequestHandler) StartConnection() {
+func (srh ServerRequestHandler) AcceptNewConnection() {
 	clientConn, err = listener.Accept()
 	if (err != nil) {
 		log.Fatal("Error while accepting connection ", err)
