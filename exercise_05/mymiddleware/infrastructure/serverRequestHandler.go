@@ -42,10 +42,6 @@ func (srh ServerRequestHandler) GetAddr() string {
 }
 
 func (srh ServerRequestHandler) Receive() []byte {
-	if (err != nil) {
-		log.Fatal("Error while accepting client connection. ", err)
-	}
-
 	// return message
 	clientMsg := make([]byte, 512)
 	_, err = clientConn.Read(clientMsg)
