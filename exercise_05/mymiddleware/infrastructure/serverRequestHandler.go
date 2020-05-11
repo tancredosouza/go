@@ -41,15 +41,12 @@ func (srh ServerRequestHandler) GetAddr() string {
 	return srh.ServerHost + ":" + strconv.Itoa(srh.ServerPort)
 }
 
-func (srh ServerRequestHandler) Receive() []byte {
+func (srh ServerRequestHandler) Receive() ([]byte, error) {
 	// return message
 	clientMsg := make([]byte, 512)
 	_, err = clientConn.Read(clientMsg)
-	if (err != nil) {
-		log.Fatal("Error while reading message from client. ", err)
-	}
 
-	return clientMsg
+	return clientMsg, err
 }
 
 func (srh ServerRequestHandler) Send(msg []byte) {
