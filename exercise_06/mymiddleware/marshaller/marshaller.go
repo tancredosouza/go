@@ -2,15 +2,15 @@ package marshaller
 
 import (
 	"bytes"
+	"encoding/json"
 	"github.com/my/repo/mymiddleware/protocol"
-	"github.com/vmihailenco/msgpack"
 	"log"
 )
 
 type Marshaller struct{}
 
 func (t Marshaller) Marshall(data interface{}) []byte {
-	serializedData, err := msgpack.Marshal(data)
+	serializedData, err := json.Marshal(data)
 	if (err != nil) {
 		log.Fatal("Error serializing data. ", err)
 	}
@@ -20,7 +20,8 @@ func (t Marshaller) Marshall(data interface{}) []byte {
 
 func (t Marshaller) Unmarshall(b []byte) protocol.Packet {
 	var data protocol.Packet
-	err := msgpack.Unmarshal(bytes.Trim(b, "\x00"), &data)
+	err := json.Unmarshal(bytes.Trim(b, "\x00"), &data)
+	log.Println(data)
 	if (err != nil) {
 		log.Fatal("Error deserializing data. ", err)
 	}
