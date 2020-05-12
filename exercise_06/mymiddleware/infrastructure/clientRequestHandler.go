@@ -18,9 +18,13 @@ func (crh ClientRequestHandler) GetAddr() string {
 func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	// stablish socket connection
 	// connect to server
-	conn, err := net.Dial("tcp", crh.GetAddr())
-	if (err != nil) {
-		log.Fatal("Error while dialing ", conn)
+	var conn net.Conn
+	var err error
+	for {
+		conn, err = net.Dial("tcp", crh.GetAddr())
+		if (err == nil) {
+			break;
+		}
 	}
 	defer conn.Close()
 
