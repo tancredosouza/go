@@ -32,7 +32,7 @@ func (q QueueProxy) InsertElement(v int) string {
 		requester = &distribution.Requester{}
 	}
 
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{v, q.QueueNumber})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{q.QueueNumber, v})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
