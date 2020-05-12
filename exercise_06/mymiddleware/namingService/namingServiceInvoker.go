@@ -34,12 +34,14 @@ func (i Invoker) Invoke() {
 	srh.StartListening()
 	for {
 		srh.AcceptNewConnection()
-		receivedData, _ := srh.Receive()
+		go func() {
+			receivedData, _ := srh.Receive()
 
-		processedData := demuxAndProcess(receivedData)
+			processedData := demuxAndProcess(receivedData)
 
-		srh.Send(processedData)
-		srh.CloseConnection()
+			srh.Send(processedData)
+			srh.CloseConnection()
+		}()
 	}
 
 	srh.StopListening()
@@ -93,10 +95,10 @@ func lookupAndPack(proxyName string) (protocol.ResponseBody, int) {
 func assembleProxyFromPacket(p protocol.Packet) service.Proxy {
 	data := p.Body.RequestBody.Data[1].(map[string]interface{})
 	hostIp := data["HostIp"].(string)
-	hostPort := int(data["HostPort"].(int64))
+	hostPort := int(data["HostPort"].(float64))
 	proxyType := data["TypeName"].(string)
 	if proxyType == constants.QUEUE_TYPE {
-		queueNumber := int(data["QueueNumber"].(int64))
+		queueNumber := int(data["QueueNumber"].(float64))
 
 		return service.QueueProxy{
 				HostIp:         hostIp,
