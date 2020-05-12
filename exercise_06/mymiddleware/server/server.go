@@ -10,7 +10,7 @@ import (
 func main() {
 	n := service.NamingServiceProxy{NamingServiceIp: "localhost", NamingServicePort: 3999}
 
-	for i:=0; i < 500; i++ {
+	for i:=0; i < 100; i++ {
 		register(n, i)
 	}
 

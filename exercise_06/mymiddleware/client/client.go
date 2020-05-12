@@ -14,7 +14,6 @@ func main() {
 
 	for i := 0; i < 100; i++ {
 		queueProxy := namingProxy.Lookup(fmt.Sprintf("app.Queue_%d", i))
-		fmt.Println(i)
 
 		go performRandomOperations(queueProxy.(service.QueueProxy))
 	}
@@ -39,13 +38,14 @@ func main() {
 func performRandomOperations(queueProxy service.QueueProxy) {
 	rand.Seed(time.Now().Unix())
 	for i := 0; i < 500; i++ {
+		fmt.Println(i)
 		r := rand.Intn(4)
 
-		if (r == 0) {
+		if (true) {
 			x := rand.Intn(100)
 			queueProxy.InsertElement(x)
 		}
-
+		continue;
 		if (r == 1) {
 			fmt.Println(queueProxy.GetSize())
 		}
@@ -57,6 +57,8 @@ func performRandomOperations(queueProxy service.QueueProxy) {
 		if (r == 3) {
 			fmt.Println(queueProxy.GetFirstElement())
 		}
+		t := float64(time.Second) * 0.1
+		time.Sleep(time.Duration(t))
 	}
 }
 
