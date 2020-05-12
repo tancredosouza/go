@@ -65,9 +65,10 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 	// choose operation
 	op := p.Body.RequestHeader.Operation
 	var v int64 = 0
+	var queueNumber = int(p.Body.RequestBody.Data[0].(int64))
 
-	if (len(p.Body.RequestBody.Data) != 0) {
-		v = p.Body.RequestBody.Data[0].(int64)
+	if (len(p.Body.RequestBody.Data) > 1) {
+		v = p.Body.RequestBody.Data[1].(int64)
 	}
 
 	var res string = ""
@@ -76,7 +77,7 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 		res = onStackPerform(op, v)
 		statusCode = constants.OK_STATUS
 	} else if id == constants.QUEUE_ID {
-		res = onQueuePerform(op, v)
+		res = onQueuePerform(op, v, queueNumber)
 		statusCode = constants.OK_STATUS
 	} else {
 		res = "Invalid object ID"
@@ -136,7 +137,8 @@ func onStackPerform(operation string, v int64) string {
 	return ans
 }
 
-func onQueuePerform(operation string, v int64) string {
+func onQueuePerform(operation string, v int64, queueNumber int) string {
+	fetchDataForQueue(queueNumber)
 	var ans string
 	switch operation {
 	case "pop":
@@ -164,12 +166,13 @@ func onQueuePerform(operation string, v int64) string {
 	default:
 		ans = "Invalid operation."
 	}
+	saveDataOnDatabase(queueNumber)
 
 	return ans
 }
 
 func fetchDataForQueue(queueId int) {
-	sourceFile := fmt.Sprintf("database/queue_%d.txt", queueId)
+	sourceFile := fmt.Sprintf("./mymiddleware/database/queue_%d.txt", queueId)
 	var err error
 	queueServant, err = readFile(sourceFile)
 	if (err != nil) {
@@ -180,6 +183,10 @@ func fetchDataForQueue(queueId int) {
 // It would be better for such a function to return error, instead of handling
 // it on their own.
 func readFile(fname string) (nums []int64, err error) {
+	if _, err := os.Stat(fname); os.IsNotExist(err) {
+		return []int64{}, nil
+	}
+
 	b, err := ioutil.ReadFile(fname)
 	if err != nil { return nil, err }
 
@@ -201,7 +208,7 @@ func readFile(fname string) (nums []int64, err error) {
 }
 
 func saveDataOnDatabase(queueId int) {
-	destFilepath := fmt.Sprintf("database/queue_%d.txt", queueId)
+	destFilepath := fmt.Sprintf("./mymiddleware/database/queue_%d.txt", queueId)
 
 	err := writeFile(destFilepath)
 	if (err != nil) {
