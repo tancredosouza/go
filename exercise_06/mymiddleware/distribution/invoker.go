@@ -6,7 +6,10 @@ import (
 	"github.com/my/repo/mymiddleware/infrastructure"
 	"github.com/my/repo/mymiddleware/marshaller"
 	"github.com/my/repo/mymiddleware/protocol"
+	"io/ioutil"
+	"os"
 	"strconv"
+	"strings"
 )
 
 type Invoker struct{
@@ -25,18 +28,16 @@ func (i Invoker) Invoke() {
 	}
 
 	srh.StartListening()
-	var clientId = 0
 
 	for {
 		srh.AcceptNewConnection()
-		go i.handleNewClientConnection(srh, clientId)
-		clientId++
+		go i.handleNewClientConnection(srh)
 	}
 
 	srh.StopListening()
 }
 
-func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler, clientId int) {
+func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler) {
 	for {
 		//log.Println("Waiting to receive data from client")
 		receivedData, err := srh.Receive()
@@ -44,7 +45,7 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 			break;
 		}
 
-		processedData := i.demuxAndProcess(receivedData, clientId)
+		processedData := i.demuxAndProcess(receivedData)
 
 		//log.Println("Sending data to client")
 		srh.Send(processedData)
@@ -53,7 +54,7 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 	srh.CloseConnection()
 }
 
-func (Invoker) demuxAndProcess(data []byte, clientId int) []byte {
+func (Invoker) demuxAndProcess(data []byte) []byte {
 	m := marshaller.Marshaller{}
 	p := m.Unmarshall(data)
 
@@ -74,7 +75,7 @@ func (Invoker) demuxAndProcess(data []byte, clientId int) []byte {
 		res = onStackPerform(op, v)
 		statusCode = constants.OK_STATUS
 	} else if id == constants.QUEUE_ID {
-		res = onQueuePerform(op, v, clientId)
+		res = onQueuePerform(op, v)
 		statusCode = constants.OK_STATUS
 	} else {
 		res = "Invalid object ID"
@@ -134,7 +135,7 @@ func onStackPerform(operation string, v int64) string {
 	return ans
 }
 
-func onQueuePerform(operation string, v int64, clientId int) string {
+func onQueuePerform(operation string, v int64) string {
 	var ans string
 	switch operation {
 	case "pop":
@@ -164,4 +165,51 @@ func onQueuePerform(operation string, v int64, clientId int) string {
 	}
 
 	return ans
+}
+
+func fetchDataForQueue(queueId int) {
+	sourceFile := fmt.Sprintf("database/queue_%d.txt", queueId)
+	queueServant, _ = readFile(sourceFile)
+}
+
+// It would be better for such a function to return error, instead of handling
+// it on their own.
+func readFile(fname string) (nums []int64, err error) {
+	b, err := ioutil.ReadFile(fname)
+	if err != nil { return nil, err }
+
+	lines := strings.Split(string(b), "\n")
+	// Assign cap to avoid resize on every append.
+	nums = make([]int64, 0, len(lines))
+
+	for _, l := range lines {
+		// Empty line occurs at the end of the file when we use Split.
+		if len(l) == 0 { continue }
+		// Atoi better suits the job when we know exactly what we're dealing
+		// with. Scanf is the more general option.
+		n, err := strconv.Atoi(l)
+		if err != nil { return nil, err }
+		nums = append(nums, int64(n))
+	}
+
+	return nums, nil
+}
+
+func saveDataOnDatabase(queueId int) {
+	destFilepath := fmt.Sprintf("database/queue_%d.txt", queueId)
+
+	writeFile(destFilepath)
+}
+
+func writeFile(filepath string) error {
+	outputFile, err := os.Create(filepath)
+	if (err != nil) {
+		return err
+	}
+
+	for i:=0; i<len(queueServant);i++ {
+		fmt.Fprintln(outputFile, queueServant[i])
+	}
+
+	return nil
 }
