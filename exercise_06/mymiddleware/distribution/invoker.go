@@ -7,6 +7,7 @@ import (
 	"github.com/my/repo/mymiddleware/marshaller"
 	"github.com/my/repo/mymiddleware/protocol"
 	"io/ioutil"
+	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -169,7 +170,11 @@ func onQueuePerform(operation string, v int64) string {
 
 func fetchDataForQueue(queueId int) {
 	sourceFile := fmt.Sprintf("database/queue_%d.txt", queueId)
-	queueServant, _ = readFile(sourceFile)
+	var err error
+	queueServant, err = readFile(sourceFile)
+	if (err != nil) {
+		log.Fatal("Error while fetching data from database ", err)
+	}
 }
 
 // It would be better for such a function to return error, instead of handling
@@ -198,7 +203,10 @@ func readFile(fname string) (nums []int64, err error) {
 func saveDataOnDatabase(queueId int) {
 	destFilepath := fmt.Sprintf("database/queue_%d.txt", queueId)
 
-	writeFile(destFilepath)
+	err := writeFile(destFilepath)
+	if (err != nil) {
+		log.Fatal("Error while saving data to database ", err)
+	}
 }
 
 func writeFile(filepath string) error {
