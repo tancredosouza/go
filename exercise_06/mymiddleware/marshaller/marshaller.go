@@ -21,7 +21,6 @@ func (t Marshaller) Marshall(data interface{}) []byte {
 func (t Marshaller) Unmarshall(b []byte) protocol.Packet {
 	var data protocol.Packet
 	err := json.Unmarshal(bytes.Trim(b, "\x00"), &data)
-	log.Println(data)
 	if (err != nil) {
 		log.Fatal("Error deserializing data. ", err)
 	}
