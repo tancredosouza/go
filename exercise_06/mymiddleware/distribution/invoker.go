@@ -16,11 +16,7 @@ type Invoker struct{
 
 var stack []int64
 
-type Queue struct {
-	data []int64
-}
-
-var queues map[int]Queue = make(map[int]Queue)
+var queueServant []int64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
@@ -30,9 +26,9 @@ func (i Invoker) Invoke() {
 
 	srh.StartListening()
 	var clientId = 0
+
 	for {
 		srh.AcceptNewConnection()
-		queues[clientId] = Queue{}
 		go i.handleNewClientConnection(srh, clientId)
 		clientId++
 	}
@@ -45,7 +41,6 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 		//log.Println("Waiting to receive data from client")
 		receivedData, err := srh.Receive()
 		if (err != nil) {
-			delete(queues, clientId)
 			break;
 		}
 
@@ -143,26 +138,26 @@ func onQueuePerform(operation string, v int64, clientId int) string {
 	var ans string
 	switch operation {
 	case "pop":
-		if (len(queues[clientId].data) > 0) {
-			queues[clientId] = Queue{queues[clientId].data[1:]}
+		if (len(queueServant) > 0) {
+			queueServant = queueServant[1:]
 			ans = "Operation successful"
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "push":
-		queues[clientId] = Queue{append(queues[clientId].data, v)}
+		queueServant = append(queueServant, v)
 		ans = "Operation successful"
 		break
 	case "front":
-		if (len(queues[clientId].data) > 0) {
-			ans = fmt.Sprintf("Front is: %f", queues[clientId].data[0])
+		if (len(queueServant) > 0) {
+			ans = fmt.Sprintf("Front is: %f", queueServant[0])
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "size":
-		ans = "Length is: " + strconv.Itoa(len(queues[clientId].data))
+		ans = "Length is: " + strconv.Itoa(len(queueServant))
 		break
 	default:
 		ans = "Invalid operation."
