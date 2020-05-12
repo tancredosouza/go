@@ -10,6 +10,7 @@ type QueueProxy struct {
 	HostPort       int
 	RemoteObjectId int
 	TypeName string
+	QueueNumber int
 }
 var requester *distribution.Requester = nil
 
@@ -18,7 +19,7 @@ func (q QueueProxy) RemoveElement() string {
 		requester = &distribution.Requester{}
 	}
 
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -31,7 +32,7 @@ func (q QueueProxy) InsertElement(v int) string {
 		requester = &distribution.Requester{}
 	}
 
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{v})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{v, q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -44,7 +45,7 @@ func (q QueueProxy) GetFirstElement() string {
 		requester = &distribution.Requester{}
 	}
 
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -57,7 +58,7 @@ func (q QueueProxy) GetSize() string {
 		requester = &distribution.Requester{}
 	}
 
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{})
+	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
