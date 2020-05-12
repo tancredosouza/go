@@ -10,13 +10,13 @@ import (
 func main() {
 	n := service.NamingServiceProxy{NamingServiceIp: "localhost", NamingServicePort: 3999}
 
-	q := service.QueueProxy{HostIp: "localhost", HostPort: 9132, RemoteObjectId: constants.QUEUE_ID, TypeName: "queue"}
+	q := service.QueueProxy{HostIp: "localhost", HostPort: 9132, RemoteObjectId: constants.QUEUE_ID, TypeName: "queue", QueueNumber: 1}
 	s := service.StackProxy{HostIp:"localhost",HostPort: 9132,RemoteObjectId: constants.STACK_ID, TypeName: "stack"}
 
 	res := n.Register("app.Stack", s)
 	fmt.Println(res)
 
-	res = n.Register("app.Queue", q)
+	res = n.Register("app.Queue_1", q)
 	fmt.Println(res)
 
 	inv := distribution.Invoker{"localhost", 9132}
