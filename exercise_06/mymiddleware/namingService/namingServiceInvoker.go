@@ -95,13 +95,15 @@ func assembleProxyFromPacket(p protocol.Packet) service.Proxy {
 	hostIp := data["HostIp"].(string)
 	hostPort := int(data["HostPort"].(int64))
 	proxyType := data["TypeName"].(string)
-
 	if proxyType == constants.QUEUE_TYPE {
-			return service.QueueProxy{
+		queueNumber := int(data["QueueNumber"].(int64))
+
+		return service.QueueProxy{
 				HostIp:         hostIp,
 				HostPort:       hostPort,
 				TypeName:       proxyType,
 				RemoteObjectId: constants.QUEUE_ID,
+				QueueNumber: queueNumber,
 			}
 	}
 
