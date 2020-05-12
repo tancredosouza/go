@@ -11,9 +11,9 @@ func main() {
 	outputFile, _ := os.Create("timemymiddleware_seconds.txt")
 
 	namingProxy := service.NamingServiceProxy{NamingServiceIp:"localhost", NamingServicePort:3999}
-	queueProxy := namingProxy.Lookup("app.Queue")
+	queueProxy := namingProxy.Lookup("app.Queue_1")
 
-	fmt.Println(queueProxy.GetFirstElement())
+	fmt.Println(queueProxy.GetSize())
 	return;
 
 	for i:=0; i<10000;i++ {
