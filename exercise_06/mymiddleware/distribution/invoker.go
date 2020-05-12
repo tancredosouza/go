@@ -20,7 +20,7 @@ type Invoker struct{
 
 var stack []int64
 
-var queueServant []int64
+var queueServant []float64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
@@ -64,11 +64,11 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 
 	// choose operation
 	op := p.Body.RequestHeader.Operation
-	var v int64 = 0
-	var queueNumber = int(p.Body.RequestBody.Data[0].(int64))
+	var v float64 = 0
+	var queueNumber = int(p.Body.RequestBody.Data[0].(float64))
 
 	if (len(p.Body.RequestBody.Data) > 1) {
-		v = p.Body.RequestBody.Data[1].(int64)
+		v = p.Body.RequestBody.Data[1].(float64)
 	}
 
 	var res string = ""
@@ -105,7 +105,7 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 	return m.Marshall(response)
 }
 
-func onStackPerform(operation string, v int64) string {
+func onStackPerform(operation string, v float64) string {
 	var ans string
 	switch operation {
 	case "pop":
@@ -117,7 +117,7 @@ func onStackPerform(operation string, v int64) string {
 		}
 		break
 	case "push":
-		stack = append(stack, v)
+		stack = append(stack, int64(v))
 		ans = "Operation successful"
 		break
 	case "top":
@@ -137,7 +137,7 @@ func onStackPerform(operation string, v int64) string {
 	return ans
 }
 
-func onQueuePerform(operation string, v int64, queueNumber int) string {
+func onQueuePerform(operation string, v float64, queueNumber int) string {
 	fetchDataForQueue(queueNumber)
 	var ans string
 	switch operation {
@@ -182,9 +182,9 @@ func fetchDataForQueue(queueId int) {
 
 // It would be better for such a function to return error, instead of handling
 // it on their own.
-func readFile(fname string) (nums []int64, err error) {
+func readFile(fname string) (nums []float64, err error) {
 	if _, err := os.Stat(fname); os.IsNotExist(err) {
-		return []int64{}, nil
+		return []float64{}, nil
 	}
 
 	b, err := ioutil.ReadFile(fname)
@@ -192,7 +192,7 @@ func readFile(fname string) (nums []int64, err error) {
 
 	lines := strings.Split(string(b), "\n")
 	// Assign cap to avoid resize on every append.
-	nums = make([]int64, 0, len(lines))
+	nums = make([]float64, 0, len(lines))
 
 	for _, l := range lines {
 		// Empty line occurs at the end of the file when we use Split.
@@ -201,7 +201,7 @@ func readFile(fname string) (nums []int64, err error) {
 		// with. Scanf is the more general option.
 		n, err := strconv.Atoi(l)
 		if err != nil { return nil, err }
-		nums = append(nums, int64(n))
+		nums = append(nums, float64(n))
 	}
 
 	return nums, nil
