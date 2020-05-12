@@ -20,14 +20,15 @@ type Invoker struct{
 
 var stack []int64
 
-var queueServant []float64
+var servants chan *[]float64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
 		ServerHost: i.HostIp,
 		ServerPort: i.HostPort,
 	}
-
+	servants = make(chan *[]float64, 100)
+	addServants(100)
 	srh.StartListening()
 
 	for {
@@ -36,6 +37,12 @@ func (i Invoker) Invoke() {
 	}
 
 	srh.StopListening()
+}
+
+func addServants(n int) {
+	for i:=0; i<5;i++{
+		servants <- &[]float64{}
+	}
 }
 
 func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler) {
@@ -136,53 +143,56 @@ func onStackPerform(operation string, v float64) string {
 }
 
 func onQueuePerform(operation string, v float64, queueNumber int) string {
-	fetchDataForQueue(queueNumber)
+	acquiredServant := <- servants
+	fetchDataForQueue(acquiredServant, queueNumber)
 	var ans string
+	var x []float64
 	switch operation {
 	case "pop":
-		if (len(queueServant) > 0) {
-			queueServant = queueServant[1:]
+		if (len(*acquiredServant) > 0) {
+			x = (*acquiredServant)[1:]
+			acquiredServant = &x
 			ans = "Operation successful"
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "push":
-		queueServant = append(queueServant, v)
+		x = append(*acquiredServant, v)
+		acquiredServant = &x
 		ans = "Operation successful"
 		break
 	case "front":
-		if (len(queueServant) > 0) {
-			ans = fmt.Sprintf("Front is: %f", queueServant[0])
+		if (len(*acquiredServant) > 0) {
+			ans = fmt.Sprintf("Front is: %f", (*acquiredServant)[0])
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "size":
-		ans = "Length is: " + strconv.Itoa(len(queueServant))
+		ans = "Length is: " + strconv.Itoa(len(*acquiredServant))
 		break
 	default:
 		ans = "Invalid operation."
 	}
-	saveDataOnDatabase(queueNumber)
-
+	saveDataOnDatabase(acquiredServant, queueNumber)
+	*acquiredServant = nil
+	servants <- acquiredServant
 	return ans
 }
 
-func fetchDataForQueue(queueId int) {
+func fetchDataForQueue(servant *[]float64, queueId int) {
 	sourceFile := fmt.Sprintf("./mymiddleware/database/queue_%d.txt", queueId)
 	var err error
-	queueServant, err = readFile(sourceFile)
+	servant, err = readFile(sourceFile)
 	if (err != nil) {
 		log.Fatal("Error while fetching data from database ", err)
 	}
 }
 
-// It would be better for such a function to return error, instead of handling
-// it on their own.
-func readFile(fname string) (nums []float64, err error) {
-	if _, err := os.Stat(fname); os.IsNotExist(err) {
-		return []float64{}, nil
+func readFile(fname string) (*[]float64, error) {
+	if(!fileExists(fname)) {
+		return &[]float64{}, nil
 	}
 
 	b, err := ioutil.ReadFile(fname)
@@ -190,39 +200,58 @@ func readFile(fname string) (nums []float64, err error) {
 
 	lines := strings.Split(string(b), "\n")
 	// Assign cap to avoid resize on every append.
-	nums = make([]float64, 0, len(lines))
+	nums := make([]float64, 0, len(lines))
 
 	for _, l := range lines {
 		// Empty line occurs at the end of the file when we use Split.
 		if len(l) == 0 { continue }
 		// Atoi better suits the job when we know exactly what we're dealing
 		// with. Scanf is the more general option.
-		n, err := strconv.Atoi(l)
+		n, err := strconv.ParseFloat(l,64)
 		if err != nil { return nil, err }
 		nums = append(nums, float64(n))
 	}
 
-	return nums, nil
+	return &nums, nil
 }
 
-func saveDataOnDatabase(queueId int) {
+func saveDataOnDatabase(values *[]float64, queueId int) {
 	destFilepath := fmt.Sprintf("./mymiddleware/database/queue_%d.txt", queueId)
 
-	err := writeFile(destFilepath)
+	err := writeFile(values, destFilepath)
 	if (err != nil) {
 		log.Fatal("Error while saving data to database ", err)
 	}
 }
 
-func writeFile(filepath string) error {
-	outputFile, err := os.Create(filepath)
-	if (err != nil) {
-		return err
+func writeFile(values *[]float64, filepath string) error {
+	if (!fileExists(filepath)){
+		_, err := os.Create(filepath)
+		if (err != nil) {
+			return err
+		}
 	}
 
-	for i:=0; i<len(queueServant);i++ {
-		fmt.Fprintln(outputFile, queueServant[i])
+	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		panic(err)
+	}
+
+	defer f.Close()
+
+	for i:=0; i<len(*values);i++ {
+		if _, err = f.WriteString(fmt.Sprintf("%f\n", (*values)[i])); err != nil {
+			panic(err)
+		}
 	}
 
 	return nil
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
 }
