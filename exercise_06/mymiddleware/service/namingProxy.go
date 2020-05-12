@@ -37,14 +37,12 @@ func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
 	if (namingProxyRequester == nil) {
 		namingProxyRequester = &distribution.Requester{}
 	}
-
 	res, err := namingProxyRequester.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
 		"lookup",
 		[]interface{}{proxyName})
-
 	if (err != nil) {
 		log.Fatal("Lookup error. ", res)
 	}
@@ -56,7 +54,8 @@ func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
 			HostIp: mappedProxy["HostIp"].(string),
 			HostPort: int(mappedProxy["HostPort"].(int64)),
 			RemoteObjectId:int(mappedProxy["RemoteObjectId"].(int64)),
-			TypeName: mappedProxy["TypeName"].(string)}
+			TypeName: mappedProxy["TypeName"].(string),
+			QueueNumber: int(mappedProxy["QueueNumber"].(int64))}
 	} else {
 		return StackProxy{
 			HostIp: mappedProxy["HostIp"].(string),
