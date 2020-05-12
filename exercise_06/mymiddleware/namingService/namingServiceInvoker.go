@@ -30,17 +30,15 @@ func (i Invoker) Invoke() {
 		ServerPort: i.HostPort,
 	}
 
-
 	srh.StartListening()
 	for {
 		srh.AcceptNewConnection()
 		go func() {
 			receivedData, _ := srh.Receive()
-
+			//log.Println(string(receivedData))
 			processedData := demuxAndProcess(receivedData)
 
 			srh.Send(processedData)
-			srh.CloseConnection()
 		}()
 	}
 

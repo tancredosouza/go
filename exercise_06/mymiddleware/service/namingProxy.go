@@ -52,10 +52,10 @@ func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
 	if (mappedProxy["TypeName"] == "queue") {
 		return QueueProxy{
 			HostIp: mappedProxy["HostIp"].(string),
-			HostPort: int(mappedProxy["HostPort"].(int64)),
-			RemoteObjectId:int(mappedProxy["RemoteObjectId"].(int64)),
+			HostPort: int(mappedProxy["HostPort"].(float64)),
+			RemoteObjectId:int(mappedProxy["RemoteObjectId"].(float64)),
 			TypeName: mappedProxy["TypeName"].(string),
-			QueueNumber: int(mappedProxy["QueueNumber"].(int64))}
+			QueueNumber: int(mappedProxy["QueueNumber"].(float64))}
 	} else {
 		return StackProxy{
 			HostIp: mappedProxy["HostIp"].(string),

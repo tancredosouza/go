@@ -11,18 +11,13 @@ import (
 type Requester struct {
 }
 
-var crh *infrastructure.ClientRequestHandler
 func (r Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) ([]interface{}, error) {
 	// create marshaller
 	m := marshaller.Marshaller{}
 
-	// declare CRH
-	if (crh == nil) {
-		//log.Println("Declare crh")
-		crh = &infrastructure.ClientRequestHandler{
-			ServerHost: serverHost,
-			ServerPort: serverPort,
-		}
+	crh := infrastructure.ClientRequestHandler{
+		ServerHost: serverHost,
+		ServerPort: serverPort,
 	}
 
 	// assemble packet
@@ -49,11 +44,6 @@ func (r Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int
 
 	// send from CRH
 	serializedPacket := crh.SendAndReceive(m.Marshall(packet))
-
-	if (operation == "register" || operation == "lookup") {
-		crh.CloseConnection()
-		crh = nil
-	}
 
 	// receive serializedPacket
 	resPacket := m.Unmarshall(serializedPacket)

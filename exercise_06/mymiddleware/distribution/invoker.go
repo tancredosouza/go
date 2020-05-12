@@ -51,8 +51,6 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 		//log.Println("Sending data to client")
 		srh.Send(processedData)
 	}
-
-	srh.CloseConnection()
 }
 
 func (Invoker) demuxAndProcess(data []byte) []byte {

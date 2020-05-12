@@ -12,12 +12,9 @@ type QueueProxy struct {
 	TypeName string
 	QueueNumber int
 }
-var requester *distribution.Requester = nil
 
 func (q QueueProxy) RemoveElement() string {
-	if (requester == nil) {
-		requester = &distribution.Requester{}
-	}
+	requester := distribution.Requester{}
 
 	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{q.QueueNumber})
 	if (err != nil) {
@@ -28,9 +25,7 @@ func (q QueueProxy) RemoveElement() string {
 }
 
 func (q QueueProxy) InsertElement(v int) string {
-	if (requester == nil) {
-		requester = &distribution.Requester{}
-	}
+	requester := distribution.Requester{}
 
 	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{q.QueueNumber, v})
 	if (err != nil) {
@@ -41,9 +36,7 @@ func (q QueueProxy) InsertElement(v int) string {
 }
 
 func (q QueueProxy) GetFirstElement() string {
-	if (requester == nil) {
-		requester = &distribution.Requester{}
-	}
+	requester := distribution.Requester{}
 
 	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{q.QueueNumber})
 	if (err != nil) {
@@ -54,9 +47,7 @@ func (q QueueProxy) GetFirstElement() string {
 }
 
 func (q QueueProxy) GetSize() string {
-	if (requester == nil) {
-		requester = &distribution.Requester{}
-	}
+	requester := distribution.Requester{}
 
 	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{q.QueueNumber})
 	if (err != nil) {

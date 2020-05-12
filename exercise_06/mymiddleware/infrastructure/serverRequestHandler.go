@@ -12,8 +12,8 @@ type ServerRequestHandler struct {
 }
 
 var listener net.Listener
-var err error
-var clientConn net.Conn
+var lock chan struct{}
+var clientConnection net.Conn
 
 /*
 As-is, for each connection the code creates a listener and
@@ -24,43 +24,40 @@ Layer to explicitly start the SRH, breaking the management
 isolation provided by the layered architecture.
 */
 func (srh ServerRequestHandler) StartListening() {
-	listener, err = net.Listen("tcp", srh.GetAddr())
-	if (err != nil) {
-		log.Fatal("Error while creating listener. ", err)
-	}
-}
+	lock = make(chan struct{}, 1)
 
-func (srh ServerRequestHandler) AcceptNewConnection() {
-	clientConn, err = listener.Accept()
-	if (err != nil) {
-		log.Fatal("Error while accepting connection ", err)
-	}
+	listener, _ = net.Listen("tcp", srh.GetAddr())
 }
 
 func (srh ServerRequestHandler) GetAddr() string {
 	return srh.ServerHost + ":" + strconv.Itoa(srh.ServerPort)
 }
 
+func (srh ServerRequestHandler) AcceptNewConnection() {
+	conn, err := listener.Accept()
+	if (err != nil) {
+		log.Fatal("Error while accepting connection ", err)
+	}
+
+	lock <- struct{}{}
+	clientConnection = conn
+}
+
 func (srh ServerRequestHandler) Receive() ([]byte, error) {
-	// return message
 	clientMsg := make([]byte, 512)
-	_, err = clientConn.Read(clientMsg)
+	_, err := clientConnection.Read(clientMsg)
 
 	return clientMsg, err
 }
 
 func (srh ServerRequestHandler) Send(msg []byte) {
-	// send message
-	_, err = clientConn.Write(msg)
+	_, err := clientConnection.Write(msg)
 	if (err != nil) {
 		log.Fatal("Error writing response to client. ", err)
 	}
 
-	//srh.StopListening()
-}
-
-func (srh ServerRequestHandler) CloseConnection() {
-	clientConn.Close()
+	clientConnection.Close()
+	<- lock
 }
 
 func (srh ServerRequestHandler) StopListening() {
