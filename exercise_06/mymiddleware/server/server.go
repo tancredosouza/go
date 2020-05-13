@@ -21,7 +21,12 @@ func main() {
 }
 
 func register(n service.NamingServiceProxy, i int) {
-	q := service.QueueProxy{HostIp: "localhost", HostPort: 9132, RemoteObjectId: constants.QUEUE_ID, TypeName: "queue", QueueNumber: i}
+	q := service.QueueProxy{
+		HostIp: "localhost",
+		HostPort: 9132,
+		RemoteObjectId: constants.QUEUE_ID,
+		TypeName: "queue",
+		QueueNumber: i}
 
 	res := n.Register(fmt.Sprintf("app.Queue_%d", i), q)
 
