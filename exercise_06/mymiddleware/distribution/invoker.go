@@ -21,6 +21,7 @@ type Invoker struct{
 var stack []int64
 
 var servants chan *[]float64
+var queues [][]float64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
