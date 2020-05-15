@@ -9,17 +9,17 @@ import (
 type NamingServiceProxy struct {
 	NamingServiceIp   string
 	NamingServicePort int
+
+	namingProxyRequester distribution.Requester
 }
 
-var namingProxyRequester *distribution.Requester
+func (n *NamingServiceProxy) Initialize() {
+	n.namingProxyRequester = distribution.Requester{}
+	n.namingProxyRequester.Initialize(n.NamingServiceIp, n.NamingServicePort)
+}
 
 func (n NamingServiceProxy) Register(proxyName string, proxy Proxy) string {
-	if (namingProxyRequester == nil) {
-		//log.Println("Creating requester")
-		namingProxyRequester = &distribution.Requester{}
-	}
-
-	res, err := namingProxyRequester.Invoke(
+	res, err := n.namingProxyRequester.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
@@ -30,14 +30,13 @@ func (n NamingServiceProxy) Register(proxyName string, proxy Proxy) string {
 		log.Fatal(fmt.Sprintf("An error occurred during registration: %s", res))
 	}
 
+	n.namingProxyRequester.Conn.Close()
+
 	return res[0].(string)
 }
 
-func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
-	if (namingProxyRequester == nil) {
-		namingProxyRequester = &distribution.Requester{}
-	}
-	res, err := namingProxyRequester.Invoke(
+func (n NamingServiceProxy) Lookup(proxyName string) *QueueProxy {
+	res, err := n.namingProxyRequester.Invoke(
 		n.NamingServiceIp,
 		n.NamingServicePort,
 		0,
@@ -48,19 +47,12 @@ func (n NamingServiceProxy) Lookup(proxyName string) Proxy {
 	}
 
 	mappedProxy := res[0].(map[string]interface{})
+	n.namingProxyRequester.Conn.Close()
 
-	if (mappedProxy["TypeName"] == "queue") {
-		return QueueProxy{
-			HostIp: mappedProxy["HostIp"].(string),
-			HostPort: int(mappedProxy["HostPort"].(float64)),
-			RemoteObjectId:int(mappedProxy["RemoteObjectId"].(float64)),
-			TypeName: mappedProxy["TypeName"].(string),
-			QueueNumber: int(mappedProxy["QueueNumber"].(float64))}
-	} else {
-		return StackProxy{
-			HostIp: mappedProxy["HostIp"].(string),
-			HostPort: int(mappedProxy["HostPort"].(int64)),
-			RemoteObjectId: int(mappedProxy["RemoteObjectId"].(int64)),
-			TypeName: mappedProxy["TypeName"].(string)}
-	}
+	return &(QueueProxy{
+		HostIp: mappedProxy["HostIp"].(string),
+		HostPort: int(mappedProxy["HostPort"].(float64)),
+		RemoteObjectId:int(mappedProxy["RemoteObjectId"].(float64)),
+		TypeName: mappedProxy["TypeName"].(string),
+		QueueNumber: int(mappedProxy["QueueNumber"].(float64))})
 }

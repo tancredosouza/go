@@ -8,6 +8,7 @@ import (
 	"github.com/my/repo/mymiddleware/protocol"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -21,35 +22,36 @@ type Invoker struct{
 var stack []int64
 
 var servants chan *[]float64
-var queues [][]float64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
 		ServerHost: i.HostIp,
 		ServerPort: i.HostPort,
 	}
-	servants = make(chan *[]float64, 100)
-	addServants(100)
+
+	addServants(50)
 	srh.StartListening()
 
 	for {
-		srh.AcceptNewConnection()
-		go i.handleNewClientConnection(srh)
+		conn := srh.AcceptNewConnection()
+		go i.handleNewClientConnection(srh, conn)
 	}
 
 	srh.StopListening()
 }
 
 func addServants(n int) {
-	for i:=0; i<5;i++{
+	servants = make(chan *[]float64, n)
+
+	for i:=0; i<n;i++{
 		servants <- &[]float64{}
 	}
 }
 
-func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler) {
+func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler, conn net.Conn) {
 	for {
 		//log.Println("Waiting to receive data from client")
-		receivedData, err := srh.Receive()
+		receivedData, err := srh.Receive(conn)
 		if (err != nil) {
 			break;
 		}
@@ -57,7 +59,7 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 		processedData := i.demuxAndProcess(receivedData)
 
 		//log.Println("Sending data to client")
-		srh.Send(processedData)
+		srh.Send(processedData, conn)
 	}
 }
 

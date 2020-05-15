@@ -9,6 +9,7 @@ import (
 	"github.com/my/repo/mymiddleware/protocol"
 	"github.com/my/repo/mymiddleware/service"
 	"log"
+	"net"
 )
 
 type NamingService struct {
@@ -32,17 +33,19 @@ func (i Invoker) Invoke() {
 
 	srh.StartListening()
 	for {
-		srh.AcceptNewConnection()
-		go func() {
-			receivedData, _ := srh.Receive()
-			//log.Println(string(receivedData))
-			processedData := demuxAndProcess(receivedData)
-
-			srh.Send(processedData)
-		}()
+		conn := srh.AcceptNewConnection()
+		go handleNewConnection(srh, conn)
 	}
 
 	srh.StopListening()
+}
+
+func handleNewConnection(srh infrastructure.ServerRequestHandler, conn net.Conn) {
+	receivedData, _ := srh.Receive(conn)
+	//log.Println(string(receivedData))
+	processedData := demuxAndProcess(receivedData)
+
+	srh.Send(processedData, conn)
 }
 
 func demuxAndProcess(data []byte) []byte {

@@ -1,4 +1,4 @@
-package distribution
+package distribution_05
 
 import (
 	"fmt"
@@ -8,6 +8,7 @@ import (
 	"github.com/my/repo/mymiddleware/protocol"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -20,39 +21,50 @@ type Invoker struct{
 
 var stack []int64
 
-var queues map[int]*[]float64
+var servants chan *[]float64
 
 func (i Invoker) Invoke() {
 	srh := infrastructure.ServerRequestHandler{
 		ServerHost: i.HostIp,
 		ServerPort: i.HostPort,
 	}
+
+	addServants(50)
 	srh.StartListening()
-	queues = make(map[int]*[]float64)
+
 	for {
-		srh.AcceptNewConnection()
-		go i.handleNewClientConnection(srh)
+		conn := srh.AcceptNewConnection()
+		go i.handleNewClientConnection(srh, conn)
 	}
 
 	srh.StopListening()
 }
 
-func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler) {
+func addServants(n int) {
+	servants = make(chan *[]float64, n)
+
+	for i:=0; i<n;i++{
+		servants <- &[]float64{}
+	}
+}
+
+func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler, conn net.Conn) {
+	queue := []float64{}
 	for {
 		//log.Println("Waiting to receive data from client")
-		receivedData, err := srh.Receive()
+		receivedData, err := srh.Receive(conn)
 		if (err != nil) {
 			break;
 		}
 
-		processedData := i.demuxAndProcess(receivedData)
+		processedData := i.demuxAndProcess(receivedData, queue)
 
 		//log.Println("Sending data to client")
-		srh.Send(processedData)
+		srh.Send(processedData, conn)
 	}
 }
 
-func (Invoker) demuxAndProcess(data []byte) []byte {
+func (Invoker) demuxAndProcess(data []byte, queue []float64) []byte {
 	m := marshaller.Marshaller{}
 	p := m.Unmarshall(data)
 
@@ -62,14 +74,9 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 	// choose operation
 	op := p.Body.RequestHeader.Operation
 	var v float64 = 0
-	var queueNumber = int(p.Body.RequestBody.Data[0].(float64))
 
 	if (len(p.Body.RequestBody.Data) > 1) {
 		v = p.Body.RequestBody.Data[1].(float64)
-	}
-
-	if (queues[queueNumber] == nil) {
-		queues[queueNumber] = &[]float64{}
 	}
 
 	var res string = ""
@@ -78,7 +85,7 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 		res = onStackPerform(op, v)
 		statusCode = constants.OK_STATUS
 	} else if id == constants.QUEUE_ID {
-		res = onQueuePerform(op, v, queueNumber)
+		res, queue = onQueuePerform(op, v, queue)
 		statusCode = constants.OK_STATUS
 	} else {
 		res = "Invalid object ID"
@@ -138,44 +145,35 @@ func onStackPerform(operation string, v float64) string {
 	return ans
 }
 
-func onQueuePerform(operation string, v float64, queueNumber int) string {
-	acquiredServant := queues[queueNumber]
-	//fetchDataForQueue(acquiredServant, queueNumber)
+func onQueuePerform(operation string, v float64, queue []float64) (string, []float64) {
 	var ans string
-	var x []float64
 	switch operation {
 	case "pop":
-		if (len(*acquiredServant) > 0) {
-			x = (*acquiredServant)[1:]
-			acquiredServant = &x
+		if (len(queue) > 0) {
+			queue = queue[1:]
 			ans = "Operation successful"
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "push":
-		x = append(*acquiredServant, v)
-		acquiredServant = &x
+		queue = append(queue, v)
 		ans = "Operation successful"
 		break
 	case "front":
-		if (len(*acquiredServant) > 0) {
-			ans = fmt.Sprintf("Front is: %f", (*acquiredServant)[0])
+		if (len(queue) > 0) {
+			ans = fmt.Sprintf("Front is: %f", queue[0])
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "size":
-		ans = "Length is: " + strconv.Itoa(len(*acquiredServant))
+		ans = "Length is: " + strconv.Itoa(len(queue))
 		break
 	default:
 		ans = "Invalid operation."
 	}
-	queues[queueNumber] = acquiredServant
-	//saveDataOnDatabase(acquiredServant, queueNumber)
-	//*acquiredServant = nil
-	//servants <- acquiredServant
-	return ans
+	return ans, queue
 }
 
 func fetchDataForQueue(servant *[]float64, queueId int) {

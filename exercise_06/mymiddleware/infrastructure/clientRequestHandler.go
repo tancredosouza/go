@@ -15,21 +15,18 @@ func (crh ClientRequestHandler) GetAddr() string {
 	return crh.ServerHost + ":" + strconv.Itoa(crh.ServerPort)
 }
 
-func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
-	// stablish socket connection
-	// connect to server
-	var conn net.Conn
-	var err error
-	for {
-		conn, err = net.Dial("tcp", crh.GetAddr())
-		if (err == nil) {
-			break;
-		}
+func (crh ClientRequestHandler) StablishConnection() net.Conn {
+	conn, err := net.Dial("tcp", crh.GetAddr())
+	if (err != nil) {
+		log.Fatal("Error stablishing tcp connection ", err)
 	}
-	defer conn.Close()
 
+	return conn
+}
+
+func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte, conn net.Conn) []byte {
 	// send message
-	_, err = conn.Write(msgToSend)
+	_, err := conn.Write(msgToSend)
 	if (err != nil) {
 		log.Fatal("Error sending message to server. ", err)
 	}

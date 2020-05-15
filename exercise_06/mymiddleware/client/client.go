@@ -3,19 +3,20 @@ package main
 import (
 	"fmt"
 	"github.com/my/repo/mymiddleware/service"
-	"math/rand"
+	"log"
+	"os"
 	"time"
 )
 
-func main() {
-	//outputFile, _ := os.Create("timemymiddleware_seconds.txt")
+var outputFile, _ = os.Create("time_100clients_prevexercise.txt")
 
+func main() {
 	namingProxy := service.NamingServiceProxy{NamingServiceIp:"localhost", NamingServicePort:3999}
 
 	for i := 0; i < 100; i++ {
+		namingProxy.Initialize()
 		queueProxy := namingProxy.Lookup(fmt.Sprintf("app.Queue_%d", i))
-
-		go performRandomOperations(queueProxy.(service.QueueProxy))
+		go performOperations(i == 0, queueProxy)
 	}
 
 	fmt.Scanln()
@@ -35,30 +36,21 @@ func main() {
 	*/
 }
 
-func performRandomOperations(queueProxy service.QueueProxy) {
-	rand.Seed(time.Now().Unix())
-	for i := 0; i < 500; i++ {
-		fmt.Println(i)
-		r := rand.Intn(4)
+func performOperations(write bool, queueProxy *service.QueueProxy) {
+	time.Sleep(time.Second)
 
-		if (true) {
-			x := rand.Intn(100)
-			queueProxy.InsertElement(x)
-		}
-		continue;
-		if (r == 1) {
-			fmt.Println(queueProxy.GetSize())
-		}
+	queueProxy.Initialize()
+	log.Println("------------->", queueProxy.InsertElement(33))
 
-		if (r == 2) {
-			fmt.Println(queueProxy.RemoveElement())
-		}
+	for x :=0; x < 10000; x++ {
+		st := time.Now()
+		queueProxy.GetFirstElement()
+		end := time.Since(st)
 
-		if (r == 3) {
-			fmt.Println(queueProxy.GetFirstElement())
+		if write {
+			fmt.Fprintln(outputFile, end.Seconds())
+			fmt.Println(x)
 		}
-		t := float64(time.Second) * 0.1
-		time.Sleep(time.Duration(t))
 	}
 }
 

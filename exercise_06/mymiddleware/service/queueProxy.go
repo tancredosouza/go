@@ -11,12 +11,17 @@ type QueueProxy struct {
 	RemoteObjectId int
 	TypeName string
 	QueueNumber int
+
+	requester distribution.Requester
+}
+
+func (q *QueueProxy) Initialize() {
+	q.requester = distribution.Requester{}
+	q.requester.Initialize(q.HostIp, q.HostPort)
 }
 
 func (q QueueProxy) RemoveElement() string {
-	requester := distribution.Requester{}
-
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{q.QueueNumber})
+	res, err := q.requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "pop", []interface{}{q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -25,9 +30,7 @@ func (q QueueProxy) RemoveElement() string {
 }
 
 func (q QueueProxy) InsertElement(v int) string {
-	requester := distribution.Requester{}
-
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{q.QueueNumber, v})
+	res, err := q.requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "push", []interface{}{q.QueueNumber, v})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -36,9 +39,7 @@ func (q QueueProxy) InsertElement(v int) string {
 }
 
 func (q QueueProxy) GetFirstElement() string {
-	requester := distribution.Requester{}
-
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{q.QueueNumber})
+	res, err := q.requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "front", []interface{}{q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}
@@ -47,9 +48,7 @@ func (q QueueProxy) GetFirstElement() string {
 }
 
 func (q QueueProxy) GetSize() string {
-	requester := distribution.Requester{}
-
-	res, err := requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{q.QueueNumber})
+	res, err := q.requester.Invoke(q.HostIp, q.HostPort, q.RemoteObjectId, "size", []interface{}{q.QueueNumber})
 	if (err != nil) {
 		log.Fatal(res[0].(string))
 	}

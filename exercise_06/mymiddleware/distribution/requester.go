@@ -6,19 +6,29 @@ import (
 	"github.com/my/repo/mymiddleware/infrastructure"
 	"github.com/my/repo/mymiddleware/marshaller"
 	"github.com/my/repo/mymiddleware/protocol"
+	"log"
+	"net"
 )
 
 type Requester struct {
+	Crh  infrastructure.ClientRequestHandler
+	Conn net.Conn
+}
+
+func (r *Requester) Initialize(serverHost string, serverPort int) {
+	r.Crh = infrastructure.ClientRequestHandler{
+		ServerHost: serverHost,
+		ServerPort: serverPort,
+	}
+
+	log.Println("stablishing connection")
+	r.Conn = r.Crh.StablishConnection()
+	log.Println("stablished connection")
 }
 
 func (r Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) ([]interface{}, error) {
 	// create marshaller
 	m := marshaller.Marshaller{}
-
-	crh := infrastructure.ClientRequestHandler{
-		ServerHost: serverHost,
-		ServerPort: serverPort,
-	}
 
 	// assemble packet
 	reqHeader := protocol.RequestHeader{
@@ -43,7 +53,7 @@ func (r Requester) Invoke(serverHost string, serverPort int, remoteObjectKey int
 	packet := protocol.Packet{Header: header, Body: body}
 
 	// send from CRH
-	serializedPacket := crh.SendAndReceive(m.Marshall(packet))
+	serializedPacket := r.Crh.SendAndReceive(m.Marshall(packet), r.Conn)
 
 	// receive serializedPacket
 	resPacket := m.Unmarshall(serializedPacket)
