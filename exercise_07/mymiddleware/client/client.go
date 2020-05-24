@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"github.com/my/repo/mymiddleware/service"
-	"log"
 	"os"
 	"time"
 )
@@ -40,7 +39,7 @@ func performOperations(write bool, queueProxy *service.QueueProxy) {
 	time.Sleep(time.Second)
 
 	queueProxy.Initialize()
-	log.Println("------------->", queueProxy.InsertElement(33))
+	queueProxy.InsertElement(33)
 
 	for x :=0; x < 10000; x++ {
 		st := time.Now()
@@ -52,20 +51,4 @@ func performOperations(write bool, queueProxy *service.QueueProxy) {
 			fmt.Println(x)
 		}
 	}
-}
-
-func test(proxy service.Proxy) {
-	fmt.Println(proxy.InsertElement(5))
-	fmt.Println(proxy.InsertElement(2))
-	fmt.Println(proxy.InsertElement(4))
-	fmt.Println(proxy.InsertElement(6))
-	fmt.Println(proxy.InsertElement(1))
-
-	fmt.Println(proxy.GetSize())
-	fmt.Println(proxy.RemoveElement())
-	fmt.Println(proxy.RemoveElement())
-	fmt.Println(proxy.GetSize())
-	fmt.Println(proxy.GetFirstElement())
-
-	fmt.Println("---------------------------------")
 }
