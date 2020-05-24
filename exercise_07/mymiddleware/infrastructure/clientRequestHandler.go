@@ -4,6 +4,7 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"time"
 )
 
 type ClientRequestHandler struct {
@@ -46,12 +47,15 @@ func (crh *ClientRequestHandler) Receive() []byte {
 func (crh *ClientRequestHandler) keepSending() {
 	for {
 		msgToSend := <- crh.toSendBuffer
+		log.Println("sending... ")
 		err := Send(msgToSend, crh.conn)
+		time.Sleep(time.Second)
 
 		if (err != nil) {
 			log.Println("error while sending -> ", err)
 			break
 		}
+		log.Println("sent! ")
 	}
 }
 
