@@ -19,8 +19,6 @@ type Invoker struct{
 	HostPort int
 }
 
-var stack []int64
-
 var servants chan *[]float64
 
 func (i Invoker) Invoke() {
@@ -81,10 +79,7 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 
 	var res string = ""
 	var statusCode int
-	if id == constants.STACK_ID {
-		res = onStackPerform(op, v)
-		statusCode = constants.OK_STATUS
-	} else if id == constants.QUEUE_ID {
+	if id == constants.QUEUE_ID {
 		res = onQueuePerform(op, v, queueNumber)
 		statusCode = constants.OK_STATUS
 	} else {
@@ -111,38 +106,6 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 	response := protocol.Packet{Header: header, Body: protocol.Body{ResponseHeader: respHeader, ResponseBody: respBody}}
 
 	return m.Marshall(response)
-}
-
-func onStackPerform(operation string, v float64) string {
-	var ans string
-	switch operation {
-	case "pop":
-		if (len(stack) > 0) {
-			stack = stack[:len(stack)-1]
-			ans = "Operation successful"
-		} else {
-			ans = "Invalid operation. Stack is empty!"
-		}
-		break
-	case "push":
-		stack = append(stack, int64(v))
-		ans = "Operation successful"
-		break
-	case "top":
-		if (len(stack) > 0) {
-			ans = fmt.Sprintf("Top is: %f", stack[len(stack)-1])
-		} else {
-			ans = "Invalid operation. Stack is empty!"
-		}
-		break
-	case "size":
-		ans = "Length is: " + strconv.Itoa(len(stack))
-		break
-	default:
-		ans = "Invalid operation."
-	}
-
-	return ans
 }
 
 func onQueuePerform(operation string, v float64, queueNumber int) string {
