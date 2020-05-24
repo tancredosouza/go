@@ -28,7 +28,6 @@ func (r *Requestor) Invoke(serverHost string, serverPort int, remoteObjectKey in
 	m := marshaller.Marshaller{}
 
 	packet := assemblePacket(remoteObjectKey, operation, param)
-	log.Println("Sending -> ", param)
 	go r.Crh.Send(m.Marshall(packet))
 }
 
