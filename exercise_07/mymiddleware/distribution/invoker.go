@@ -109,51 +109,53 @@ func (Invoker) demuxAndProcess(data []byte) []byte {
 }
 
 func onQueuePerform(operation string, v float64, queueNumber int) string {
-	acquiredServant := <- servants
-	fetchDataForQueue(acquiredServant, queueNumber)
+	<- servants
+	acquiredServant := fetchDataForQueue(queueNumber)
 	var ans string
 	var x []float64
 	switch operation {
 	case "pop":
-		if (len(*acquiredServant) > 0) {
-			x = (*acquiredServant)[1:]
-			acquiredServant = &x
+		if (len(acquiredServant) > 0) {
+			x = (acquiredServant)[1:]
+			acquiredServant = x
 			ans = "Operation successful"
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "push":
-		x = append(*acquiredServant, v)
-		acquiredServant = &x
+		x = append(acquiredServant, v)
+		acquiredServant = x
 		ans = "Operation successful"
 		break
 	case "front":
-		if (len(*acquiredServant) > 0) {
-			ans = fmt.Sprintf("Front is: %f", (*acquiredServant)[0])
+		if (len(acquiredServant) > 0) {
+			ans = fmt.Sprintf("Front is: %f", (acquiredServant)[0])
 		} else {
 			ans = "Invalid operation. Queue is empty!"
 		}
 		break
 	case "size":
-		ans = "Length is: " + strconv.Itoa(len(*acquiredServant))
+		ans = "Length is: " + strconv.Itoa(len(acquiredServant))
 		break
 	default:
 		ans = "Invalid operation."
 	}
-	saveDataOnDatabase(acquiredServant, queueNumber)
-	*acquiredServant = nil
-	servants <- acquiredServant
+	saveDataOnDatabase(&acquiredServant, queueNumber)
+	acquiredServant = nil
+	servants <- &acquiredServant
 	return ans
 }
 
-func fetchDataForQueue(servant *[]float64, queueId int) {
+func fetchDataForQueue(queueId int) []float64 {
 	sourceFile := fmt.Sprintf("./mymiddleware/database/queue_%d.txt", queueId)
-	var err error
-	servant, err = readFile(sourceFile)
+
+	servant, err := readFile(sourceFile)
 	if (err != nil) {
 		log.Fatal("Error while fetching data from database ", err)
 	}
+
+	return *servant
 }
 
 func readFile(fname string) (*[]float64, error) {
