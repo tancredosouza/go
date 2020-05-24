@@ -49,6 +49,7 @@ func (crh *ClientRequestHandler) keepSending() {
 		err := Send(msgToSend, crh.conn)
 
 		if (err != nil) {
+			log.Println("error while sending -> ", err)
 			break
 		}
 	}
@@ -63,7 +64,9 @@ func Send(msgToSend []byte, conn net.Conn) error {
 func (crh *ClientRequestHandler) keepReceiving() {
 	for {
 		receivedData, err := Receive(crh.conn)
+
 		if (err != nil) {
+			log.Println("error while receiving -> ", err)
 			break
 		}
 
