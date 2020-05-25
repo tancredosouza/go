@@ -8,7 +8,6 @@ import (
 	"github.com/my/repo/mymiddleware/protocol"
 	"io/ioutil"
 	"log"
-	"net"
 	"os"
 	"strconv"
 	"strings"
@@ -22,20 +21,19 @@ type Invoker struct{
 var servants chan *[]float64
 
 func (i Invoker) Invoke() {
+	addServants(50)
+
 	srh := infrastructure.ServerRequestHandler{
 		ServerHost: i.HostIp,
 		ServerPort: i.HostPort,
 	}
 
-	addServants(50)
-	srh.StartListening()
+	srh.Initialize()
 
-	for {
-		conn := srh.AcceptNewConnection()
-		go i.handleNewClientConnection(srh, conn)
-	}
+	srh.AcceptNewConnection()
+	srh.CreateQueues()
 
-	srh.StopListening()
+	go i.handleNewClientConnection(srh)
 }
 
 func addServants(n int) {
@@ -46,18 +44,13 @@ func addServants(n int) {
 	}
 }
 
-func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler, conn net.Conn) {
+func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandler) {
 	for {
-		//log.Println("Waiting to receive data from client")
-		receivedData, err := srh.Receive(conn)
-		if (err != nil) {
-			break;
-		}
+		receivedData := srh.Receive()
 
 		processedData := i.demuxAndProcess(receivedData)
 
-		//log.Println("Sending data to client")
-		srh.Send(processedData, conn)
+		srh.Send(processedData)
 	}
 }
 
@@ -200,7 +193,7 @@ func writeFile(values *[]float64, filepath string) error {
 		}
 	}
 
-	f, err := os.OpenFile(filepath, os.O_APPEND|os.O_WRONLY, 0600)
+	f, err := os.OpenFile(filepath, os.O_WRONLY, 0600)
 	if err != nil {
 		panic(err)
 	}
