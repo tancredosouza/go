@@ -18,9 +18,7 @@ func (r *Requestor) Initialize(serverHost string, serverPort int) {
 		ServerPort: serverPort,
 	}
 
-	log.Println("initializing connection")
 	r.Crh.Initialize()
-	log.Println("initializing connection")
 }
 
 func (r *Requestor) Invoke(serverHost string, serverPort int, remoteObjectKey int, operation string, param []interface{}) {
@@ -28,13 +26,14 @@ func (r *Requestor) Invoke(serverHost string, serverPort int, remoteObjectKey in
 	m := marshaller.Marshaller{}
 
 	packet := assemblePacket(remoteObjectKey, operation, param)
-	go r.Crh.Send(m.Marshall(packet))
+	r.Crh.Send(m.Marshall(packet))
 }
 
-func (r *Requestor) ResultCallback() []interface{} {
+func (r *Requestor) WaitForResponseAsync() {
+	i := 0
 	for {
-		log.Println("Waiting to receive")
-		log.Println(r.Receive())
+		log.Println(i, "---->", r.Receive())
+		i++
 	}
 }
 
