@@ -2,7 +2,6 @@ package service
 
 import (
 	"github.com/my/repo/mymiddleware/distribution"
-	"log"
 )
 
 type NamingServiceProxy struct {
@@ -26,8 +25,7 @@ func (n *NamingServiceProxy) Register(proxyName string, proxy Proxy) string {
 
 	res := n.requestor.Receive()
 
-	n.requestor.Crh.CloseConnection()
-	log.Println("closed connection ", proxyName)
+	// n.requestor.Crh.CloseConnection()
 
 	return res[0].(string)
 }
@@ -44,7 +42,7 @@ func (n *NamingServiceProxy) Lookup(proxyName string) *QueueProxy {
 
 	mappedProxy := res[0].(map[string]interface{})
 
-	n.requestor.Crh.CloseConnection()
+	// n.requestor.Crh.CloseConnection()
 
 	return &(QueueProxy{
 		HostIp: mappedProxy["HostIp"].(string),
