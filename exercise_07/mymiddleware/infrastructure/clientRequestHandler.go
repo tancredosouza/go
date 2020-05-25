@@ -1,10 +1,10 @@
 package infrastructure
 
 import (
+	"encoding/binary"
 	"log"
 	"net"
 	"strconv"
-	"time"
 )
 
 type ClientRequestHandler struct {
@@ -23,14 +23,11 @@ func (crh *ClientRequestHandler) Initialize() {
 	crh.receivedBuffer = make(chan []byte, 10)
 	crh.toSendBuffer = make(chan []byte, 10)
 
-	log.Println("Trying to dial ", crh.GetAddr())
 	var err error
 	crh.conn, err = net.Dial("tcp", crh.GetAddr())
 	if (err != nil) {
 		log.Fatal("Error establishing tcp connection ", err)
 	}
-
-	log.Println("Connection established! Hooray.")
 
 	go crh.keepSending()
 	go crh.keepReceiving()
@@ -41,27 +38,34 @@ func (crh *ClientRequestHandler) Send(msgToSend []byte) {
 }
 
 func (crh *ClientRequestHandler) Receive() []byte {
-	return <- crh.receivedBuffer
+	msgToReceive := <- crh.receivedBuffer
+
+	return msgToReceive
 }
 
 func (crh *ClientRequestHandler) keepSending() {
 	for {
 		msgToSend := <- crh.toSendBuffer
-		log.Println("sending... ")
 		err := Send(msgToSend, crh.conn)
-		time.Sleep(time.Second)
 
 		if (err != nil) {
-			log.Println("error while sending -> ", err)
+			log.Println("error while sending -> ", string(msgToSend), err)
 			break
 		}
-		log.Println("sent! ")
 	}
 }
 
 func Send(msgToSend []byte, conn net.Conn) error {
+	// send message's size
+	sizeMsgToServer := make([]byte, 4)
+	l := uint32(len(msgToSend))
+
+	binary.LittleEndian.PutUint32(sizeMsgToServer, l)
+	conn.Write(sizeMsgToServer)
+
 	// send message
 	_, err := conn.Write(msgToSend)
+
 	return err
 }
 
@@ -74,14 +78,27 @@ func (crh *ClientRequestHandler) keepReceiving() {
 			break
 		}
 
+		if (receivedData == nil) {
+			continue
+		}
+
 		crh.receivedBuffer <- receivedData
 	}
 }
 
 func Receive(conn net.Conn) ([]byte, error) {
+	sizeMsgFromServer := make([]byte, 4)
+	n, err := conn.Read(sizeMsgFromServer)
+
+	if (n == 0 || err != nil) {
+		return nil, err
+	}
+
+	size := binary.LittleEndian.Uint32(sizeMsgFromServer)
+
 	// wait for response and return
-	responseMsg := make([]byte, 512)
-	_, err := conn.Read(responseMsg)
+	responseMsg := make([]byte, size)
+	_, err = conn.Read(responseMsg)
 
 	return responseMsg, err
 }
