@@ -17,7 +17,7 @@ type QueueProxy struct {
 func (q *QueueProxy) Initialize() {
 	q.requester = distribution.Requestor{}
 	q.requester.Initialize(q.HostIp, q.HostPort)
-	go q.requester.ResultCallback()
+	go q.requester.WaitForResponseAsync()
 }
 
 func (q QueueProxy) RemoveElement() {
