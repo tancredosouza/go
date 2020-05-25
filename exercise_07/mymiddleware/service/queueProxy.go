@@ -2,6 +2,7 @@ package service
 
 import (
 	"github.com/my/repo/mymiddleware/distribution"
+	"github.com/my/repo/mymiddleware/result_callback"
 )
 
 type QueueProxy struct {
@@ -14,14 +15,14 @@ type QueueProxy struct {
 	requestor distribution.Requestor
 }
 
-func (q *QueueProxy) Initialize() {
+func (q *QueueProxy) Initialize(resultCallback *result_callback.ResultCallback) {
 	q.requestor = distribution.Requestor{}
 	q.requestor.Initialize(q.HostIp, q.HostPort)
 
 	// This function is defined exclusively for the queueProxy, as the namingProxy is not async.
 	// Thus, moving this function into requestor.Initialize() would cause the Server to loop
 	// infinitely when waiting for naming proxy to return (it never adds anything to its queue)
-	go q.requestor.WaitForResponseAsync()
+	go q.requestor.WaitForResponseAsync(resultCallback)
 }
 
 func (q QueueProxy) RemoveElement() {
