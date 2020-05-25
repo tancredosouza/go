@@ -17,6 +17,10 @@ type QueueProxy struct {
 func (q *QueueProxy) Initialize() {
 	q.requestor = distribution.Requestor{}
 	q.requestor.Initialize(q.HostIp, q.HostPort)
+
+	// This function is defined exclusively for the queueProxy, as the namingProxy is not async.
+	// Thus, moving this function into requestor.Initialize() would cause the Server to loop
+	// infinitely when waiting for naming proxy to return (it never adds anything to its queue)
 	go q.requestor.WaitForResponseAsync()
 }
 
