@@ -5,6 +5,7 @@ import (
 	"github.com/my/repo/mymiddleware/infrastructure"
 	"github.com/my/repo/mymiddleware/marshaller"
 	"github.com/my/repo/mymiddleware/protocol"
+	"github.com/my/repo/mymiddleware/result_callback"
 	"log"
 )
 
@@ -29,11 +30,9 @@ func (r *Requestor) Invoke(serverHost string, serverPort int, remoteObjectKey in
 	r.Crh.Send(m.Marshall(packet))
 }
 
-func (r *Requestor) WaitForResponseAsync() {
-	i := 0
+func (r *Requestor) WaitForResponseAsync(c *result_callback.ResultCallback) {
 	for {
-		log.Println(i, "---->", r.Receive())
-		i++
+		c.PublishReceivedMessage(r.Receive()[0].(string))
 	}
 }
 
