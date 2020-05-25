@@ -7,11 +7,59 @@ import (
 )
 
 type ServerRequestHandler struct {
-	ServerHost string
-	ServerPort int
+	ServerHost     string
+	ServerPort     int
+	Conn           net.Conn
+	listener       net.Listener
 }
 
-var listener net.Listener
+var receivedBuffer chan []byte
+var toSendBuffer   chan []byte
+
+func (srh *ServerRequestHandler) Initialize() {
+	receivedBuffer = make(chan []byte, 10)
+	toSendBuffer = make(chan []byte, 10)
+
+	srh.StartListening()
+}
+
+func (srh *ServerRequestHandler) Send(msgToSend []byte) {
+	toSendBuffer <- msgToSend
+}
+
+func (srh *ServerRequestHandler) Receive() []byte {
+	msgReceived := <- receivedBuffer
+	return msgReceived
+}
+
+func (srh *ServerRequestHandler) keepSending() {
+	for {
+		msgToSend := <- toSendBuffer
+		err := Send(msgToSend, srh.Conn)
+
+		if (err != nil) {
+			log.Println("error while sending -> ", string(msgToSend), err)
+			break
+		}
+	}
+}
+
+func (srh *ServerRequestHandler) keepReceiving() {
+	for {
+		receivedData, err := Receive(srh.Conn)
+
+		if (err != nil) {
+			log.Println("error while receiving -> ", err)
+			break
+		}
+
+		if (receivedData == nil) {
+			continue
+		}
+
+		receivedBuffer <- receivedData
+	}
+}
 
 /*
 As-is, for each connection the code creates a listener and
@@ -21,43 +69,36 @@ used instead. However, this would require the Distribution
 Layer to explicitly start the SRH, breaking the management
 isolation provided by the layered architecture.
 */
-func (srh ServerRequestHandler) StartListening() {
-	listener, _ = net.Listen("tcp", srh.GetAddr())
+func (srh *ServerRequestHandler) StartListening() {
+	srh.listener, _ = net.Listen("tcp", srh.GetAddr())
+	log.Println("Listening...")
 }
 
-func (srh ServerRequestHandler) GetAddr() string {
+func (srh *ServerRequestHandler) GetAddr() string {
 	return srh.ServerHost + ":" + strconv.Itoa(srh.ServerPort)
 }
 
-func (srh ServerRequestHandler) AcceptNewConnection() net.Conn {
-	conn, err := listener.Accept()
+func (srh *ServerRequestHandler) AcceptNewConnection() {
+	var err error
+	srh.Conn, err = srh.listener.Accept()
+
 	if (err != nil) {
 		log.Fatal("Error while accepting connection ", err)
 	}
 
-	return conn
+	log.Println("Successfully accepted connection")
 }
 
-func (srh ServerRequestHandler) Receive(clientConn net.Conn) ([]byte, error) {
-	clientMsg := make([]byte, 512)
-	_, err := clientConn.Read(clientMsg)
-
-	return clientMsg, err
+func (srh *ServerRequestHandler) CreateQueues() {
+	go srh.keepSending()
+	go srh.keepReceiving()
 }
 
-func (srh ServerRequestHandler) Send(msg []byte, clientConn net.Conn) {
-	_, err := clientConn.Write(msg)
-	if (err != nil) {
-		log.Fatal("Error writing response to client. ", err)
-	}
-
-	//clientConn.Close()
-}
-
-func (srh ServerRequestHandler) StopListening() {
-	err := listener.Close()
+func (srh *ServerRequestHandler) StopListening() {
+	err := srh.listener.Close()
 
 	if (err != nil) {
 		log.Fatal("Error closing listener. ", err)
 	}
+	log.Println("Closed listener")
 }
