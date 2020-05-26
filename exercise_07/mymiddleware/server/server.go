@@ -8,8 +8,11 @@ import (
 )
 
 func main() {
-	for i:=0; i < 100; i++ {
-		register(i)
+	n := service.NamingServiceProxy{HostIp: "localhost", HostPort: 3999}
+	n.Initialize()
+
+	for i:=0; i < 2; i++ {
+		register(n, i)
 	}
 
 	inv := distribution.Invoker{"localhost", 9132}
@@ -18,10 +21,7 @@ func main() {
 	fmt.Scanln()
 }
 
-func register(i int) {
-	n := service.NamingServiceProxy{HostIp: "localhost", HostPort: 3999}
-	n.Initialize()
-
+func register(n service.NamingServiceProxy, i int) {
 	q := service.QueueProxy{
 		HostIp: "localhost",
 		HostPort: 9132,
