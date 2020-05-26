@@ -6,14 +6,15 @@ import (
 	"github.com/my/repo/mymiddleware/service"
 	"log"
 	"os"
+	"time"
 )
 
 var outputFile, _ = os.Create("time_100clients_prevexercise.txt")
 
-var rcvMsgs chan string
+var times []time.Time
 
 func main() {
-	rcvMsgs = make(chan string, 1)
+	times = make([]time.Time, 10001)
 	namingProxy := service.NamingServiceProxy{HostIp: "localhost", HostPort:3999}
 
 	for i := 0; i < 1; i++ {
@@ -49,11 +50,16 @@ func performOperations(write bool, queueProxy service.QueueProxy) {
 	rcv := 0
 	for {
 		select {
-			case ans := <- result_callback.ReceivedMsgs:
-				log.Println(rcv, "--->", ans)
+			case <- result_callback.ReceivedMsgs:
+				//log.Println(rcv, "--->", ans, "--->", time.Since(times[rcv]))
+				end := time.Now()
+				log.Println(end.Sub(times[rcv]).Seconds())
+				fmt.Fprintln(outputFile, end.Sub(times[i]).Seconds())
 				rcv++
 			default:
 				if (i < 10000) {
+					times[i] = time.Now()
+					time.Sleep(3*time.Millisecond)
 					queueProxy.GetFirstElement()
 					i++
 				} else if (rcv >= 10000){
