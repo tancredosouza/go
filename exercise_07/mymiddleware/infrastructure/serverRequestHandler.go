@@ -17,8 +17,8 @@ var receivedBuffer chan []byte
 var toSendBuffer   chan []byte
 
 func (srh *ServerRequestHandler) Initialize() {
-	receivedBuffer = make(chan []byte, 10)
-	toSendBuffer = make(chan []byte, 10)
+	receivedBuffer = make(chan []byte, 10000)
+	toSendBuffer = make(chan []byte, 10000)
 
 	srh.StartListening()
 }
