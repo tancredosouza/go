@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Invoker struct{
@@ -21,7 +22,7 @@ type Invoker struct{
 var servants chan *[]float64
 
 func (i Invoker) Invoke() {
-	addServants(50)
+	addServants(1)
 
 	srh := infrastructure.ServerRequestHandler{
 		ServerHost: i.HostIp,
@@ -49,6 +50,7 @@ func (i Invoker) handleNewClientConnection(srh infrastructure.ServerRequestHandl
 		receivedData := srh.Receive()
 
 		processedData := i.demuxAndProcess(receivedData)
+		time.Sleep(5*time.Millisecond)
 
 		srh.Send(processedData)
 	}
