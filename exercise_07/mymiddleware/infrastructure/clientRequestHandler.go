@@ -20,8 +20,8 @@ func (crh ClientRequestHandler) GetAddr() string {
 }
 
 func (crh *ClientRequestHandler) Initialize() {
-	crh.receivedBuffer = make(chan []byte, 10)
-	crh.toSendBuffer = make(chan []byte, 10)
+	crh.receivedBuffer = make(chan []byte, 100)
+	crh.toSendBuffer = make(chan []byte, 100)
 
 	var err error
 	crh.conn, err = net.Dial("tcp", crh.GetAddr())
