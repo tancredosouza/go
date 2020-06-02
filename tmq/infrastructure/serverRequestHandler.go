@@ -48,16 +48,16 @@ func (srh ServerRequestHandler) KeepAcceptingNewConnections() {
 }
 
 func (srh ServerRequestHandler) AcceptNewConnection() {
-		conn, err := listener.Accept()
+		c, err := listener.Accept()
 		if (err != nil) {
 			log.Fatal("Error while accepting connection ", err)
 		}
 
 		log.Println("Accepted new connection!")
-		go handleNewConnection(conn)
+		go keepReceivingDataFromConn(c)
 }
 
-func handleNewConnection(conn net.Conn) {
+func keepReceivingDataFromConn(conn net.Conn) {
 	for {
 		msgBytes, err := Receive(conn)
 		if (err != nil) {
