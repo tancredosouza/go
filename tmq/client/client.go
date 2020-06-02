@@ -1,16 +1,13 @@
 package main
 
 import (
-	"../infrastructure"
+	"../component"
 	"log"
 )
 
 func main() {
-	crh := infrastructure.ClientRequestHandler{
-		ServerHost: "localhost",
-		ServerPort: 3993,
-	}
+	c := component.Component{}
+	c.Dial("localhost", 3993)
 
-	msg := crh.SendAndReceive([]byte("Ola servidor"))
-	log.Println(string(msg))
+	c.Publish("Olar")
 }
