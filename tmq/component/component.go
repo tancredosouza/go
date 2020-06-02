@@ -26,7 +26,7 @@ func (c *Component) Dial(serverHost string, serverPort int) {
 		serverHost,
 		serverPort}
 
-	c.Publish(protocol.Packet{"register", []interface{}{c.id} })
+	c.register()
 }
 
 func (c *Component) FetchComponentId() string {
@@ -58,9 +58,28 @@ func RandStringBytes(n int) string {
 	return string(b)
 }
 
-func (c *Component) Publish(msgToSend protocol.Packet) {
-	m := marshaller.Marshaller{}
+func (c *Component) register() {
+	c.marshallPacketAndSend(
+		protocol.Packet{"register", []interface{}{c.id} })
+}
 
-	bytesToSend := m.Marshall(msgToSend)
+func (c *Component) Subscribe(topicName string) {
+	c.marshallPacketAndSend(
+		protocol.Packet{"subscribe", []interface{}{c.id, topicName} })
+}
+
+func (c *Component) Publish(topicName string, message string) {
+	c.marshallPacketAndSend(
+		protocol.Packet{"publish", []interface{}{c.id, topicName, message} })
+}
+
+func (c *Component) Unsubscribe(topicName string) {
+	c.marshallPacketAndSend(
+		protocol.Packet{"unsubscribe", []interface{}{c.id, topicName} })
+}
+
+func (c *Component) marshallPacketAndSend(packetToSend protocol.Packet) {
+	m := marshaller.Marshaller{}
+	bytesToSend := m.Marshall(packetToSend)
 	c.crh.SendAndReceive(bytesToSend)
 }
