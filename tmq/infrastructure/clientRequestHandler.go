@@ -14,21 +14,23 @@ type ClientRequestHandler struct {
 var conn net.Conn = nil
 var err error
 
-func (crh ClientRequestHandler) GetAddr() string {
+func (crh *ClientRequestHandler) GetAddr() string {
 	return crh.ServerHost + ":" + strconv.Itoa(crh.ServerPort)
 }
 
-func (crh ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
-	if (conn == nil) {
-		log.Println("Initializing client connection")
-		for {
-			conn, err = net.Dial("tcp", crh.GetAddr())
-			if err == nil {
-				break
-			}
-			log.Println(err)
+func (crh *ClientRequestHandler) Initialize() {
+	log.Println("Initializing client connection")
+	for {
+		conn, err = net.Dial("tcp", crh.GetAddr())
+		if err == nil {
+			break
 		}
+		log.Println(err)
 	}
+}
+
+func (crh *ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
+	crh.Initialize()
 
 	err = Send(msgToSend, conn)
 	if (err != nil) {
