@@ -1,8 +1,9 @@
-package orchestrator
+package operator
 
 import (
 	"../buffers"
 	"../marshaller"
+	"fmt"
 	"log"
 )
 
@@ -22,5 +23,16 @@ func KeepListeningToIncomingMessages() {
 func operate(msg []byte) {
 	m := marshaller.Marshaller{}
 	packet := m.Unmarshall(msg)
-	log.Println(packet)
+
+	switch packet.Operation {
+	case "create":
+		createTopic(packet.Params[1].(string))
+	}
+}
+
+func createTopic(name string) {
+	if _, found := buffers.Topics[name]; !found {
+		buffers.Topics[name] = make(chan []byte, 100)
+		log.Println(fmt.Sprintf("Created topic with name %s!", name))
+	}
 }
