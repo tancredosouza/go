@@ -63,6 +63,11 @@ func (c *Component) register() {
 		protocol.Packet{"register", []interface{}{c.id} })
 }
 
+func (c *Component) CreateTopic(topicName string) {
+	c.serializeAndSend(
+		protocol.Packet{"create", []interface{}{c.id, topicName} })
+}
+
 func (c *Component) Subscribe(topicName string) {
 	c.serializeAndSend(
 		protocol.Packet{"subscribe", []interface{}{c.id, topicName} })
