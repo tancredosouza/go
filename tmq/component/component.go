@@ -17,14 +17,13 @@ type Component struct{
 	crh infrastructure.ClientRequestHandler
 }
 
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-
 func (c *Component) Dial(serverHost string, serverPort int) {
 	c.id = c.FetchComponentId()
 
 	c.crh = infrastructure.ClientRequestHandler{
-		serverHost,
-		serverPort}
+		ServerHost: serverHost,
+		ServerPort: serverPort}
+	c.crh.Initialize()
 
 	c.register()
 }
@@ -51,35 +50,37 @@ func (c *Component) FetchComponentId() string {
 }
 
 func RandStringBytes(n int) string {
+	const LETTER_BYTES = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, n)
 	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+		b[i] = LETTER_BYTES[rand.Intn(len(LETTER_BYTES))]
 	}
 	return string(b)
 }
 
 func (c *Component) register() {
-	c.marshallPacketAndSend(
+	c.serializeAndSend(
 		protocol.Packet{"register", []interface{}{c.id} })
 }
 
 func (c *Component) Subscribe(topicName string) {
-	c.marshallPacketAndSend(
+	c.serializeAndSend(
 		protocol.Packet{"subscribe", []interface{}{c.id, topicName} })
 }
 
 func (c *Component) Publish(topicName string, message string) {
-	c.marshallPacketAndSend(
+	c.serializeAndSend(
 		protocol.Packet{"publish", []interface{}{c.id, topicName, message} })
 }
 
 func (c *Component) Unsubscribe(topicName string) {
-	c.marshallPacketAndSend(
+	c.serializeAndSend(
 		protocol.Packet{"unsubscribe", []interface{}{c.id, topicName} })
 }
 
-func (c *Component) marshallPacketAndSend(packetToSend protocol.Packet) {
+func (c *Component) serializeAndSend(packetToSend protocol.Packet) {
 	m := marshaller.Marshaller{}
 	bytesToSend := m.Marshall(packetToSend)
-	c.crh.SendAndReceive(bytesToSend)
+
+	c.crh.Send(bytesToSend)
 }
