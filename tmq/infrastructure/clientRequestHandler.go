@@ -9,9 +9,9 @@ import (
 type ClientRequestHandler struct {
 	ServerHost string
 	ServerPort int
+	conn       net.Conn
 }
 
-var conn net.Conn = nil
 var err error
 
 func (crh *ClientRequestHandler) GetAddr() string {
@@ -21,7 +21,7 @@ func (crh *ClientRequestHandler) GetAddr() string {
 func (crh *ClientRequestHandler) Initialize() {
 	log.Println("Initializing client connection")
 	for {
-		conn, err = net.Dial("tcp", crh.GetAddr())
+		crh.conn, err = net.Dial("tcp", crh.GetAddr())
 		if err == nil {
 			break
 		}
@@ -29,23 +29,31 @@ func (crh *ClientRequestHandler) Initialize() {
 	}
 }
 
+func (crh *ClientRequestHandler) Send(msgToSend []byte) {
+	err = Send(msgToSend, crh.conn)
+	if (err != nil) {
+		log.Fatal(err)
+	}
+}
+
+/*
 func (crh *ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	crh.Initialize()
 
-	err = Send(msgToSend, conn)
+	err = Send(msgToSend, crh.conn)
 	if (err != nil) {
 		log.Fatal(err)
 	}
 
-	responseMsg, err := Receive(conn)
+	responseMsg, err := Receive(crh.conn)
 	if (err != nil) {
 		log.Fatal(err)
 	}
 
 	return responseMsg
 }
+*/
 
-func (ClientRequestHandler) CloseConnection() {
-	conn.Close()
-	conn = nil
+func (crh *ClientRequestHandler) CloseConnection() {
+	crh.conn.Close()
 }
