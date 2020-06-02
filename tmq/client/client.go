@@ -5,8 +5,6 @@ import (
 )
 
 func main() {
-	c := component.Component{}
+	c := component.Component{Key: 1}
 	c.Dial("localhost", 3993)
-
-	c.Publish("Olar")
 }
