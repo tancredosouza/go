@@ -1,7 +1,7 @@
 package infrastructure
 
 import (
-	"fmt"
+	"../buffers"
 	"log"
 	"net"
 	"strconv"
@@ -13,6 +13,11 @@ type ServerRequestHandler struct {
 }
 
 var listener net.Listener
+
+func (srh ServerRequestHandler) Initialize() {
+	srh.StartListening()
+	srh.KeepAcceptingNewConnections()
+}
 
 /*
 As-is, for each connection the code creates a listener and
@@ -60,14 +65,7 @@ func handleNewConnection(conn net.Conn) {
 			break;
 		}
 
-		text := msgBytes
-		log.Println(fmt.Sprintf("Received %s!", text))
-
-		err = Send([]byte(fmt.Sprintf("You've sent %s!", text)), conn)
-		if (err != nil) {
-			log.Println("Error writing to connection", err)
-			break;
-		}
+		buffers.IncomingMessages <- msgBytes
 	}
 }
 
