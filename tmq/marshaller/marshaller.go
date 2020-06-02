@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"log"
+	"../protocol"
 )
 
 type Marshaller struct{}
@@ -17,8 +18,8 @@ func (t Marshaller) Marshall(data interface{}) []byte {
 	return serializedData
 }
 
-func (t Marshaller) Unmarshall(b []byte) string {
-	var data string
+func (t Marshaller) Unmarshall(b []byte) protocol.Packet {
+	var data protocol.Packet
 
 	err := json.Unmarshal(bytes.Trim(b, "\x00"), &data)
 
