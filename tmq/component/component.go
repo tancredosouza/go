@@ -15,17 +15,17 @@ type Component struct{
 	Key int
 	id  string
 	crh infrastructure.ClientRequestHandler
+	SubscriptionMessages chan protocol.Packet
 }
 
 func (c *Component) TmqConnect(serverHost string, serverPort int) {
 	c.id = c.FetchComponentId()
-
 	c.crh = infrastructure.ClientRequestHandler{
 		ServerHost: serverHost,
 		ServerPort: serverPort}
 	c.crh.Initialize()
-
 	c.register()
+	go c.initializeSubscriptionMessages()
 }
 
 func (c *Component) FetchComponentId() string {
@@ -63,6 +63,14 @@ func (c *Component) register() {
 		protocol.Packet{"register", []interface{}{c.id} })
 }
 
+func (c *Component) initializeSubscriptionMessages() {
+	c.SubscriptionMessages = make(chan protocol.Packet, 100)
+
+	for {
+		c.SubscriptionMessages <- c.receiveAndDeserialize()
+	}
+}
+
 func (c *Component) CreateTopic(topicName string) {
 	c.serializeAndSend(
 		protocol.Packet{"create", []interface{}{c.id, topicName} })
@@ -91,8 +99,8 @@ func (c *Component) serializeAndSend(packetToSend protocol.Packet) {
 }
 
 func (c *Component) receiveAndDeserialize() protocol.Packet	{
-	m := marshaller.Marshaller{}
 	receivedBytes := c.crh.Receive()
 
+	m := marshaller.Marshaller{}
 	return m.Unmarshall(receivedBytes)
 }
