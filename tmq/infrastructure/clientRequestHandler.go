@@ -66,12 +66,12 @@ func (crh *ClientRequestHandler) TryToSend(msg []byte) {
 }
 
 func (crh *ClientRequestHandler) Receive() []byte {
-	msg, err := Receive(crh.conn)
-	if (err != nil) {
-		log.Fatal(err)
+	for {
+		msg, err := Receive(crh.conn)
+		if (err == nil) {
+			return msg
+		}
 	}
-
-	return msg
 }
 
 /*
