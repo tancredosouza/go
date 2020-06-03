@@ -12,8 +12,6 @@ type ClientRequestHandler struct {
 	conn       net.Conn
 }
 
-var err error
-
 func (crh *ClientRequestHandler) GetAddr() string {
 	return crh.ServerHost + ":" + strconv.Itoa(crh.ServerPort)
 }
@@ -21,6 +19,7 @@ func (crh *ClientRequestHandler) GetAddr() string {
 func (crh *ClientRequestHandler) Initialize() {
 	log.Println("Initializing client connection")
 	for {
+		var err error
 		crh.conn, err = net.Dial("tcp", crh.GetAddr())
 		if err == nil {
 			break
@@ -30,10 +29,19 @@ func (crh *ClientRequestHandler) Initialize() {
 }
 
 func (crh *ClientRequestHandler) Send(msgToSend []byte) {
-	err = Send(msgToSend, crh.conn)
+	err := Send(msgToSend, crh.conn)
 	if (err != nil) {
 		log.Fatal(err)
 	}
+}
+
+func (crh *ClientRequestHandler) Receive() []byte {
+	msg, err := Receive(crh.conn)
+	if (err != nil) {
+		log.Fatal(err)
+	}
+
+	return msg
 }
 
 /*
