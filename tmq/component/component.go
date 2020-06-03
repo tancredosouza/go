@@ -17,7 +17,7 @@ type Component struct{
 	crh infrastructure.ClientRequestHandler
 }
 
-func (c *Component) Dial(serverHost string, serverPort int) {
+func (c *Component) TmqConnect(serverHost string, serverPort int) {
 	c.id = c.FetchComponentId()
 
 	c.crh = infrastructure.ClientRequestHandler{
@@ -88,4 +88,11 @@ func (c *Component) serializeAndSend(packetToSend protocol.Packet) {
 	bytesToSend := m.Marshall(packetToSend)
 
 	c.crh.Send(bytesToSend)
+}
+
+func (c *Component) receiveAndDeserialize() protocol.Packet	{
+	m := marshaller.Marshaller{}
+	receivedBytes := c.crh.Receive()
+
+	return m.Unmarshall(receivedBytes)
 }
