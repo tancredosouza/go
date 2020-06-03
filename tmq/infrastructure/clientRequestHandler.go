@@ -1,15 +1,18 @@
 package infrastructure
 
 import (
+	"errors"
 	"log"
 	"net"
 	"strconv"
+	"time"
 )
 
 type ClientRequestHandler struct {
 	ServerHost string
 	ServerPort int
 	conn       net.Conn
+	ToSendBuffer chan []byte
 }
 
 func (crh *ClientRequestHandler) GetAddr() string {
@@ -17,21 +20,48 @@ func (crh *ClientRequestHandler) GetAddr() string {
 }
 
 func (crh *ClientRequestHandler) Initialize() {
-	log.Println("Initializing client connection")
-	for {
-		var err error
-		crh.conn, err = net.Dial("tcp", crh.GetAddr())
-		if err == nil {
-			break
+	crh.StablishConnection()
+
+	crh.ToSendBuffer = make(chan []byte, 100)
+	go func() { crh.TryToSend(<- crh.ToSendBuffer) }()
+
+	log.Println("Successfully initialized client connection!")
+}
+
+func (crh *ClientRequestHandler) StablishConnection() {
+	done := make(chan struct{}, 1)
+	go func() {
+		for {
+			var err error
+			crh.conn, err = net.Dial("tcp", crh.GetAddr())
+			if err == nil {
+				done <- struct{}{}
+				break
+			}
 		}
-		log.Println(err)
+	}()
+
+	select {
+	case <- done:
+		log.Println("Connection successfully stablished!")
+	case <- time.After(3 * time.Second):
+		panic(errors.New("Timeout after 3 seconds waiting for connection to stablish!"))
 	}
 }
 
 func (crh *ClientRequestHandler) Send(msgToSend []byte) {
-	err := Send(msgToSend, crh.conn)
+	crh.ToSendBuffer <- msgToSend
+}
+
+func (crh *ClientRequestHandler) TryToSend(msg []byte) {
+	err := Send(msg, crh.conn)
 	if (err != nil) {
-		log.Fatal(err)
+		log.Println("Tried to send, but couldn't!")
+		crh.StablishConnection()
+		crh.TryToSend(msg)
+	} else {
+		log.Println("Sent! ", string(msg))
+		crh.TryToSend(<- crh.ToSendBuffer)
 	}
 }
 
@@ -48,7 +78,7 @@ func (crh *ClientRequestHandler) Receive() []byte {
 func (crh *ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
 	crh.Initialize()
 
-	err = Send(msgToSend, crh.conn)
+	err = TryToSend(msgToSend, crh.conn)
 	if (err != nil) {
 		log.Fatal(err)
 	}
