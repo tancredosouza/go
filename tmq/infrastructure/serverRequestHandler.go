@@ -78,10 +78,18 @@ func keepReceivingDataFromConn(conn net.Conn) {
 }
 
 func (srh *ServerRequestHandler) Send(msg []byte, connId string) {
-	err := Send(msg, srh.connectionInfo[connId])
-	if (err != nil) {
-		log.Println("Error sending message back to connection ", err)
+	if (srh.isValidConnection(connId)) {
+		err := Send(msg, srh.connectionInfo[connId])
+		if (err != nil) {
+			log.Println("Error sending message back to connection ", err)
+		}
 	}
+}
+
+func (srh *ServerRequestHandler) isValidConnection(connId string) bool {
+	_, ok := srh.connectionInfo[connId];
+
+	return ok
 }
 
 func CloseConnection(conn net.Conn) {
