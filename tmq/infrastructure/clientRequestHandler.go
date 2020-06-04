@@ -74,24 +74,6 @@ func (crh *ClientRequestHandler) Receive() []byte {
 	}
 }
 
-/*
-func (crh *ClientRequestHandler) SendAndReceive(msgToSend []byte) []byte {
-	crh.Initialize()
-
-	err = TryToSend(msgToSend, crh.conn)
-	if (err != nil) {
-		log.Fatal(err)
-	}
-
-	responseMsg, err := Receive(crh.conn)
-	if (err != nil) {
-		log.Fatal(err)
-	}
-
-	return responseMsg
-}
-*/
-
 func (crh *ClientRequestHandler) CloseConnection() {
 	crh.conn.Close()
 }
