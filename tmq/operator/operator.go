@@ -53,5 +53,17 @@ func publish(p protocol.Packet) {
 func subscribe(p protocol.Packet) {
 	connId := p.Params[0].(string)
 	topicName := p.Params[1].(string)
-	buffers.Subscribers[topicName] = append(buffers.Subscribers[topicName], connId)
+
+	if (!isAlreadySubscribed(connId, topicName)) {
+		buffers.Subscribers[topicName] = append(buffers.Subscribers[topicName], connId)
+	}
+}
+
+func isAlreadySubscribed(connId string, topicName string) bool {
+	for _,elem := range buffers.Subscribers[topicName] {
+		if elem == connId {
+			return true
+		}
+	}
+	return false
 }
