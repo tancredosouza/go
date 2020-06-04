@@ -3,6 +3,7 @@ package infrastructure
 import (
 	"../buffers"
 	"log"
+	"../locks"
 	"net"
 	"strconv"
 )
@@ -17,8 +18,8 @@ var listener net.Listener
 
 func (srh *ServerRequestHandler) Initialize() {
 	srh.StartListening()
-	go srh.KeepAcceptingNewConnections()
 	srh.connectionInfo = make(map[string] net.Conn)
+	go srh.KeepAcceptingNewConnections()
 }
 
 /*
@@ -56,13 +57,23 @@ func (srh *ServerRequestHandler) AcceptNewConnection() {
 		}
 
 		log.Println("Accepted new connection!")
-		id, err := Receive(c)
+		b, err := Receive(c)
 		if (err != nil) {
 			log.Fatal("error receiving component id ", err)
 		}
 
-		srh.connectionInfo[string(id)] = c
-		go keepReceivingDataFromConn(c)
+		id := string(b)
+		locks.ConnectionInfoLock.Lock()
+		srh.connectionInfo[id] = c
+		locks.ConnectionInfoLock.Unlock()
+
+		locks.OutgoingLock.Lock()
+		if _, ok := buffers.OutgoingMessages[id]; !ok {
+			buffers.OutgoingMessages[id] = make([][]byte, 0)
+		}
+		locks.OutgoingLock.Unlock()
+
+	go keepReceivingDataFromConn(c)
 }
 
 func keepReceivingDataFromConn(conn net.Conn) {
@@ -77,13 +88,21 @@ func keepReceivingDataFromConn(conn net.Conn) {
 	}
 }
 
-func (srh *ServerRequestHandler) Send(msg []byte, connId string) {
+func (srh *ServerRequestHandler) Send(connId string) {
+	locks.ConnectionInfoLock.Lock()
 	if (srh.isValidConnection(connId)) {
-		err := Send(msg, srh.connectionInfo[connId])
-		if (err != nil) {
-			log.Println("Error sending message back to connection ", err)
+		if (len(buffers.OutgoingMessages[connId]) > 0) {
+			msg := buffers.OutgoingMessages[connId][0]
+			err := Send(msg, srh.connectionInfo[connId])
+			if (err != nil) {
+				log.Println("Error sending message back to connection ", err)
+				delete(srh.connectionInfo, connId)
+			} else {
+				buffers.OutgoingMessages[connId] = buffers.OutgoingMessages[connId][1:]
+			}
 		}
 	}
+	locks.ConnectionInfoLock.Unlock()
 }
 
 func (srh *ServerRequestHandler) isValidConnection(connId string) bool {

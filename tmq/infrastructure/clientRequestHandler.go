@@ -69,6 +69,7 @@ func (crh *ClientRequestHandler) Receive() []byte {
 	for {
 		msg, err := Receive(crh.conn)
 		if (err == nil) {
+			log.Println("Received ", string(msg))
 			return msg
 		}
 	}

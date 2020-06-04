@@ -26,7 +26,7 @@ func (c *Component) TmqConnect(serverHost string, serverPort int) {
 		ServerPort: serverPort}
 	c.crh.Initialize()
 	c.register()
-	go c.initializeSubscriptionMessages()
+	c.initializeSubscriptionMessages()
 }
 
 func (c *Component) FetchComponentId() string {
@@ -67,10 +67,14 @@ func (c *Component) register() {
 func (c *Component) initializeSubscriptionMessages() {
 	c.SubscriptionMessages = make(chan protocol.Packet, 100)
 
-	for {
-		msg := c.receiveAndDeserialize()
-		c.SubscriptionMessages <- msg
-	}
+	go func() {
+		for {
+			msg := c.receiveAndDeserialize()
+			log.Println("my message is = ", msg)
+			c.SubscriptionMessages <- msg
+			log.Println("pushed to channel")
+		}
+	}()
 }
 
 func (c *Component) CreateTopic(topicName string) {
