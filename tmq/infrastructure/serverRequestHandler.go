@@ -8,15 +8,17 @@ import (
 )
 
 type ServerRequestHandler struct {
-	ServerHost string
-	ServerPort int
+	ServerHost     string
+	ServerPort     int
+	connectionInfo map[string] net.Conn
 }
 
 var listener net.Listener
 
-func (srh ServerRequestHandler) Initialize() {
+func (srh *ServerRequestHandler) Initialize() {
 	srh.StartListening()
-	srh.KeepAcceptingNewConnections()
+	go srh.KeepAcceptingNewConnections()
+	srh.connectionInfo = make(map[string] net.Conn)
 }
 
 /*
@@ -27,7 +29,7 @@ used instead. However, this would require the Distribution
 Layer to explicitly start the SRH, breaking the management
 isolation provided by the layered architecture.
 */
-func (srh ServerRequestHandler) StartListening() {
+func (srh *ServerRequestHandler) StartListening() {
 	var err error
 	listener, err = net.Listen("tcp", srh.GetAddr())
 	if (err != nil) {
@@ -37,23 +39,29 @@ func (srh ServerRequestHandler) StartListening() {
 	log.Println("Listening to new connections!")
 }
 
-func (srh ServerRequestHandler) GetAddr() string {
+func (srh *ServerRequestHandler) GetAddr() string {
 	return srh.ServerHost + ":" + strconv.Itoa(srh.ServerPort)
 }
 
-func (srh ServerRequestHandler) KeepAcceptingNewConnections() {
+func (srh *ServerRequestHandler) KeepAcceptingNewConnections() {
 	for {
 		srh.AcceptNewConnection()
 	}
 }
 
-func (srh ServerRequestHandler) AcceptNewConnection() {
+func (srh *ServerRequestHandler) AcceptNewConnection() {
 		c, err := listener.Accept()
 		if (err != nil) {
 			log.Fatal("Error while accepting connection ", err)
 		}
 
 		log.Println("Accepted new connection!")
+		id, err := Receive(c)
+		if (err != nil) {
+			log.Fatal("error receiving component id ", err)
+		}
+
+		srh.connectionInfo[string(id)] = c
 		go keepReceivingDataFromConn(c)
 }
 
@@ -69,6 +77,13 @@ func keepReceivingDataFromConn(conn net.Conn) {
 	}
 }
 
+func (srh *ServerRequestHandler) Send(msg []byte, connId string) {
+	err := Send(msg, srh.connectionInfo[connId])
+	if (err != nil) {
+		log.Println("Error sending message back to connection ", err)
+	}
+}
+
 func CloseConnection(conn net.Conn) {
 	err := conn.Close()
 	if (err != nil) {
@@ -76,7 +91,7 @@ func CloseConnection(conn net.Conn) {
 	}
 }
 
-func (srh ServerRequestHandler) StopListening() {
+func (srh *ServerRequestHandler) StopListening() {
 	err := listener.Close()
 	if (err != nil) {
 		log.Fatal("Error closing listener. ", err)
