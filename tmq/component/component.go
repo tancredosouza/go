@@ -9,6 +9,7 @@ import (
 	"log"
 	"math/rand"
 	"os"
+	"time"
 )
 
 type Component struct{
@@ -52,6 +53,7 @@ func (c *Component) FetchComponentId() string {
 func RandStringBytes(n int) string {
 	const LETTER_BYTES = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	b := make([]byte, n)
+	rand.Seed(time.Now().Unix())
 	for i := range b {
 		b[i] = LETTER_BYTES[rand.Intn(len(LETTER_BYTES))]
 	}
@@ -59,15 +61,15 @@ func RandStringBytes(n int) string {
 }
 
 func (c *Component) register() {
-	c.serializeAndSend(
-		protocol.Packet{"register", []interface{}{c.id} })
+	c.crh.Send([]byte(c.id))
 }
 
 func (c *Component) initializeSubscriptionMessages() {
 	c.SubscriptionMessages = make(chan protocol.Packet, 100)
 
 	for {
-		c.SubscriptionMessages <- c.receiveAndDeserialize()
+		msg := c.receiveAndDeserialize()
+		c.SubscriptionMessages <- msg
 	}
 }
 
@@ -81,7 +83,7 @@ func (c *Component) Subscribe(topicName string) {
 		protocol.Packet{"subscribe", []interface{}{c.id, topicName} })
 }
 
-func (c *Component) Publish(topicName string, message string) {
+func (c *Component) Publish(topicName string, message int) {
 	c.serializeAndSend(
 		protocol.Packet{"publish", []interface{}{c.id, topicName, message} })
 }
