@@ -38,7 +38,7 @@ func operate(msg []byte) {
 func createTopic(name string) {
 	if _, found := buffers.Topics[name]; !found {
 		buffers.Topics[name] = make(chan float64, 100)
-		buffers.Notify <- name
+		buffers.ToNotifyTopicNames <- name
 		log.Println(fmt.Sprintf("Created topic with name %s!", name))
 	}
 }
