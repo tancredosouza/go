@@ -32,13 +32,21 @@ func (ne *NotificationEngine) getNotifications() {
 }
 
 func (ne *NotificationEngine) keepSending(topicName string) {
-	m := marshaller.Marshaller{}
 	for {
 		messageToSend := <- buffers.Topics[topicName]
-		subscribersOf := buffers.Subscribers[topicName]
-		for _, subscriber := range subscribersOf {
-			log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, messageToSend))
-			ne.srh.Send(m.Marshall(protocol.Packet{"sub_answer", []interface{}{messageToSend}}), subscriber)
-		}
+		topicSubscribers := buffers.Subscribers[topicName]
+		ne.sendToAll(messageToSend, topicSubscribers)
+	}
+}
+
+func (ne *NotificationEngine) sendToAll(message float64, subscribers []string) {
+	m := marshaller.Marshaller{}
+	for _, subscriber := range subscribers {
+		log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, message))
+
+		packet := protocol.Packet{"message", []interface{}{message}}
+		serializedPacket := m.Marshall(packet)
+
+		ne.srh.Send(serializedPacket, subscriber)
 	}
 }
