@@ -4,6 +4,7 @@ import (
 	"../buffers"
 	"../marshaller"
 	"../protocol"
+	"../persist"
 	"fmt"
 	"log"
 )
@@ -56,6 +57,11 @@ func subscribe(p protocol.Packet) {
 
 	if (!isAlreadySubscribed(connId, topicName)) {
 		buffers.Subscribers[topicName] = append(buffers.Subscribers[topicName], connId)
+
+		err := persist.Save("./database/subscribers", buffers.Subscribers)
+		if (err != nil) {
+			log.Fatal("Error persisting database ", err)
+		}
 	}
 }
 
