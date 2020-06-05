@@ -90,16 +90,14 @@ func keepReceivingDataFromConn(conn net.Conn) {
 
 func (srh *ServerRequestHandler) Send(connId string) {
 	locks.ConnectionInfoLock.Lock()
-	if (srh.isValidConnection(connId)) {
-		if (len(buffers.OutgoingMessages[connId]) > 0) {
-			msg := buffers.OutgoingMessages[connId][0]
-			err := Send(msg, srh.connectionInfo[connId])
-			if (err != nil) {
-				log.Println("Error sending message back to connection ", err)
-				delete(srh.connectionInfo, connId)
-			} else {
-				buffers.OutgoingMessages[connId] = buffers.OutgoingMessages[connId][1:]
-			}
+	if (srh.isValidConnection(connId) && len(buffers.OutgoingMessages[connId]) > 0) {
+		msg := buffers.OutgoingMessages[connId][0]
+		err := Send(msg, srh.connectionInfo[connId])
+		if (err != nil) {
+			log.Println("Error sending message back to connection ", err)
+			delete(srh.connectionInfo, connId)
+		} else {
+			buffers.OutgoingMessages[connId] = buffers.OutgoingMessages[connId][1:]
 		}
 	}
 	locks.ConnectionInfoLock.Unlock()
