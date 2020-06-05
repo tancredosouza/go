@@ -2,7 +2,6 @@ package operator
 
 import (
 	"../buffers"
-	"../locks"
 	"../marshaller"
 	"../persist"
 	"../protocol"
@@ -39,10 +38,7 @@ func operate(msg []byte) {
 
 func createTopic(name string) {
 	if _, found := buffers.Topics[name]; !found {
-
-		locks.TopicsLock.Lock()
 		buffers.Topics[name] = make(chan float64, 100)
-		locks.TopicsLock.Unlock()
 		buffers.ToNotifyTopicNames <- name
 		log.Println(fmt.Sprintf("Created topic with name %s!", name))
 	}
@@ -59,12 +55,10 @@ func subscribe(p protocol.Packet) {
 	connId := p.Params[0].(string)
 	topicName := p.Params[1].(string)
 
-	locks.SubscribersLock.Lock()
 	if (!isAlreadySubscribed(connId, topicName)) {
 		buffers.Subscribers[topicName] = append(buffers.Subscribers[topicName], connId)
 
 		err := persist.Save("./database/subscribers", buffers.Subscribers)
-		locks.SubscribersLock.Unlock()
 		if (err != nil) {
 			log.Fatal("Error persisting database ", err)
 		}
