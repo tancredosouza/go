@@ -5,6 +5,7 @@ import (
 	"../marshaller"
 	"../persist"
 	"../protocol"
+	"../locks"
 	"fmt"
 	"log"
 )
@@ -57,6 +58,7 @@ func subscribe(p protocol.Packet) {
 	connId := p.Params[0].(string)
 	topicName := p.Params[1].(string)
 
+	locks.SubscribersLock.Lock()
 	if (isAlreadySubscribed(connId, topicName) == -1) {
 		buffers.Subscribers[topicName] = append(buffers.Subscribers[topicName], connId)
 
@@ -65,17 +67,20 @@ func subscribe(p protocol.Packet) {
 			log.Fatal("Error persisting database ", err)
 		}
 	}
+	locks.SubscribersLock.Unlock()
 }
 
 func unsubscribe(p protocol.Packet) {
 	connId := p.Params[0].(string)
 	topicName := p.Params[1].(string)
 
+	locks.SubscribersLock.Lock()
 	idx := isAlreadySubscribed(connId, topicName);
 	if idx != -1 {
 		buffers.Subscribers[topicName] =
 			append(buffers.Subscribers[topicName][:idx], buffers.Subscribers[topicName][idx+1:]...)
 	}
+	locks.SubscribersLock.Unlock()
 }
 
 func isAlreadySubscribed(connId string, topicName string) int {

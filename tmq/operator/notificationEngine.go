@@ -35,8 +35,10 @@ func (ne *NotificationEngine) keepSending(topicName string) {
 	for {
 		messageToSend := <- buffers.Topics[topicName]
 
+		locks.SubscribersLock.Lock()
 		topicSubscribers := buffers.Subscribers[topicName]
 		ne.sendToAll(messageToSend, topicSubscribers)
+		locks.SubscribersLock.Unlock()
 	}
 }
 
