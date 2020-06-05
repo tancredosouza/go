@@ -1,10 +1,9 @@
 package buffers
 
 import (
-	"../locks"
-	"../persist"
 	"log"
 	"os"
+	"../persist"
 )
 
 var IncomingMessages chan []byte
@@ -20,19 +19,21 @@ func Initialize() {
 	Topics = make(map[string] chan float64)
 	Subscribers = make(map[string] []string)
 
+	loadPersistedSubscribers()
+
+	log.Println("Initialized message buffers..")
+}
+
+func loadPersistedSubscribers() {
 	filepath := "./database/subscribers"
 	if (fileExists(filepath)) {
 		log.Println("Loading persisted subscriptions")
 
-		locks.SubscribersLock.Lock()
 		err := persist.Load(filepath, &Subscribers)
 		if (err != nil) {
 			log.Fatal("Error loading subscribers database", err)
 		}
-		locks.SubscribersLock.Unlock()
 	}
-
-	log.Println("Initialized message buffers..")
 }
 
 func fileExists(filename string) bool {
