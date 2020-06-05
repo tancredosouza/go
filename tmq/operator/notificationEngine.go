@@ -5,8 +5,6 @@ import (
 	"../locks"
 	"../marshaller"
 	"../protocol"
-	"fmt"
-	"log"
 )
 import "../infrastructure"
 
@@ -23,7 +21,7 @@ func (ne *NotificationEngine) Initialize() {
 
 	ne.srh.Initialize()
 	go ne.getNotifications()
-	go ne.aux()
+	go ne.keepSendingFromOutgoingMessages()
 }
 
 func (ne *NotificationEngine) getNotifications() {
@@ -36,10 +34,9 @@ func (ne *NotificationEngine) getNotifications() {
 func (ne *NotificationEngine) keepSending(topicName string) {
 	for {
 		messageToSend := <- buffers.Topics[topicName]
-		locks.SubscribersLock.Lock()
+
 		topicSubscribers := buffers.Subscribers[topicName]
 		ne.sendToAll(messageToSend, topicSubscribers)
-		locks.SubscribersLock.Unlock()
 	}
 }
 
@@ -49,22 +46,25 @@ func (ne *NotificationEngine) sendToAll(message float64, subscribers []string) {
 		packet := protocol.Packet{"message", []interface{}{message}}
 		serializedPacket := m.Marshall(packet)
 
-		log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, message))
+		// log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, message))
 		locks.OutgoingLock.Lock()
 		buffers.OutgoingMessages[subscriber] = append(buffers.OutgoingMessages[subscriber], serializedPacket)
 		locks.OutgoingLock.Unlock()
 	}
 }
 
-func (ne NotificationEngine) aux() {
+func (ne *NotificationEngine) keepSendingFromOutgoingMessages() {
 	for {
 		locks.OutgoingLock.Lock()
-		for k, v := range buffers.OutgoingMessages {
-			l := len(v)
-			for i:=0;i<l;i++ {
-				ne.srh.Send(k)
+
+		for connectionId, messagesToSend := range buffers.OutgoingMessages {
+			numberOfMessagesToSend := len(messagesToSend)
+
+			for i := 0; i < numberOfMessagesToSend; i++ {
+				ne.srh.Send(connectionId)
 			}
 		}
+
 		locks.OutgoingLock.Unlock()
 	}
 }
