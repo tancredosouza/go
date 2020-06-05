@@ -5,8 +5,6 @@ import (
 	"../locks"
 	"../marshaller"
 	"../protocol"
-	"fmt"
-	"log"
 )
 import "../infrastructure"
 
@@ -48,7 +46,7 @@ func (ne *NotificationEngine) sendToAll(message float64, subscribers []string) {
 		packet := protocol.Packet{"message", []interface{}{message}}
 		serializedPacket := m.Marshall(packet)
 
-		log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, message))
+		// log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, message))
 		locks.OutgoingLock.Lock()
 		buffers.OutgoingMessages[subscriber] = append(buffers.OutgoingMessages[subscriber], serializedPacket)
 		locks.OutgoingLock.Unlock()
