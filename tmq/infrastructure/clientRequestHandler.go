@@ -44,8 +44,8 @@ func (crh *ClientRequestHandler) StablishConnection() {
 	select {
 	case <- done:
 		log.Println("Connection successfully stablished!")
-	case <- time.After(3 * time.Second):
-		panic(errors.New("Timeout after 3 seconds waiting for connection to stablish!"))
+	case <- time.After(6 * time.Second):
+		panic(errors.New("Timeout after 6 seconds waiting for connection to stablish!"))
 	}
 }
 
