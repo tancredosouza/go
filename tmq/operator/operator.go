@@ -33,6 +33,8 @@ func operate(msg []byte) {
 		publish(packet)
 	case "subscribe":
 		subscribe(packet)
+	case "unsubscribe":
+		unsubscribe(packet)
 	}
 }
 
@@ -55,7 +57,7 @@ func subscribe(p protocol.Packet) {
 	connId := p.Params[0].(string)
 	topicName := p.Params[1].(string)
 
-	if (!isAlreadySubscribed(connId, topicName)) {
+	if (isAlreadySubscribed(connId, topicName) == -1) {
 		buffers.Subscribers[topicName] = append(buffers.Subscribers[topicName], connId)
 
 		err := persist.Save("./database/subscribers", buffers.Subscribers)
@@ -65,11 +67,23 @@ func subscribe(p protocol.Packet) {
 	}
 }
 
-func isAlreadySubscribed(connId string, topicName string) bool {
-	for _,elem := range buffers.Subscribers[topicName] {
+func unsubscribe(p protocol.Packet) {
+	connId := p.Params[0].(string)
+	topicName := p.Params[1].(string)
+
+	idx := isAlreadySubscribed(connId, topicName);
+	if idx != -1 {
+		buffers.Subscribers[topicName] =
+			append(buffers.Subscribers[topicName][:idx], buffers.Subscribers[topicName][idx+1:]...)
+	}
+}
+
+func isAlreadySubscribed(connId string, topicName string) int {
+	for idx, elem := range buffers.Subscribers[topicName] {
 		if elem == connId {
-			return true
+			return idx
 		}
 	}
-	return false
+	return -1
 }
+
