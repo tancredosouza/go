@@ -76,6 +76,11 @@ func unsubscribe(p protocol.Packet) {
 	if idx != -1 {
 		buffers.Subscribers[topicName] =
 			append(buffers.Subscribers[topicName][:idx], buffers.Subscribers[topicName][idx+1:]...)
+
+		err := persist.Save("./database/subscribers", buffers.Subscribers)
+		if (err != nil) {
+			log.Fatal("Error persisting database ", err)
+		}
 	}
 }
 
