@@ -20,7 +20,7 @@ func (crh *ClientRequestHandler) GetAddr() string {
 }
 
 func (crh *ClientRequestHandler) Initialize() {
-	crh.StablishConnection()
+	crh.EstablishConnection()
 
 	crh.ToSendBuffer = make(chan []byte, 100)
 	go func() { crh.TryToSend(<- crh.ToSendBuffer) }()
@@ -28,7 +28,7 @@ func (crh *ClientRequestHandler) Initialize() {
 	log.Println("Successfully initialized client connection!")
 }
 
-func (crh *ClientRequestHandler) StablishConnection() {
+func (crh *ClientRequestHandler) EstablishConnection() {
 	done := make(chan struct{}, 1)
 	go func() {
 		for {
@@ -57,7 +57,7 @@ func (crh *ClientRequestHandler) TryToSend(msg []byte) {
 	err := Send(msg, crh.conn)
 	if (err != nil) {
 		log.Println("Tried to send, but couldn't!")
-		crh.StablishConnection()
+		crh.EstablishConnection()
 		crh.TryToSend(msg)
 	} else {
 		log.Println("Sent! ", string(msg))
