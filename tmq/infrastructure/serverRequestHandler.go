@@ -2,8 +2,9 @@ package infrastructure
 
 import (
 	"../buffers"
-	"log"
 	"../locks"
+	"../persist"
+	"log"
 	"net"
 	"strconv"
 )
@@ -98,6 +99,7 @@ func (srh *ServerRequestHandler) Send(connId string) {
 			delete(srh.connectionInfo, connId)
 		} else {
 			buffers.OutgoingMessages[connId] = buffers.OutgoingMessages[connId][1:]
+			persist.Save("./database/outgoing", buffers.OutgoingMessages)
 		}
 	}
 	locks.ConnectionInfoLock.Unlock()

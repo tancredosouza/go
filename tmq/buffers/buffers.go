@@ -20,6 +20,7 @@ func Initialize() {
 	Subscribers = make(map[string] []string)
 
 	loadPersistedSubscribers()
+	loadPersistedOutgoingMessages()
 
 	log.Println("Initialized message buffers..")
 }
@@ -32,6 +33,18 @@ func loadPersistedSubscribers() {
 		err := persist.Load(filepath, &Subscribers)
 		if (err != nil) {
 			log.Fatal("Error loading subscribers database", err)
+		}
+	}
+}
+
+func loadPersistedOutgoingMessages() {
+	filepath := "./database/outgoing"
+	if (fileExists(filepath)) {
+		log.Println("Loading persisted outgoing messages")
+
+		err := persist.Load(filepath, &OutgoingMessages)
+		if (err != nil) {
+			log.Fatal("Error loading outgoing messages database", err)
 		}
 	}
 }

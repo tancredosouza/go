@@ -4,6 +4,7 @@ import (
 	"../buffers"
 	"../locks"
 	"../marshaller"
+	"../persist"
 	"../protocol"
 )
 import "../infrastructure"
@@ -49,6 +50,7 @@ func (ne *NotificationEngine) sendToAll(message float64, subscribers []string) {
 		// log.Println(fmt.Sprintf("Sending to conn %s msg %f", subscriber, message))
 		locks.OutgoingLock.Lock()
 		buffers.OutgoingMessages[subscriber] = append(buffers.OutgoingMessages[subscriber], serializedPacket)
+		persist.Save("./database/outgoing", buffers.OutgoingMessages)
 		locks.OutgoingLock.Unlock()
 	}
 }
