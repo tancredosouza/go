@@ -70,9 +70,7 @@ func (c *Component) initializeSubscriptionMessages() {
 	go func() {
 		for {
 			msg := c.receiveAndDeserialize()
-			log.Println("my message is = ", msg)
 			c.SubscriptionMessages <- msg
-			log.Println("pushed to channel")
 		}
 	}()
 }

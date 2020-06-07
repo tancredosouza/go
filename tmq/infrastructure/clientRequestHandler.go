@@ -60,7 +60,6 @@ func (crh *ClientRequestHandler) TryToSend(msg []byte) {
 		crh.EstablishConnection()
 		crh.TryToSend(msg)
 	} else {
-		log.Println("Sent! ", string(msg))
 		crh.TryToSend(<- crh.ToSendBuffer)
 	}
 }
@@ -69,7 +68,6 @@ func (crh *ClientRequestHandler) Receive() []byte {
 	for {
 		msg, err := Receive(crh.conn)
 		if (err == nil) {
-			log.Println("Received ", string(msg))
 			return msg
 		}
 	}
