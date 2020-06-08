@@ -43,7 +43,7 @@ func (crh *ClientRequestHandler) EstablishConnection() {
 
 	select {
 	case <- done:
-		log.Println("Connection successfully stablished!")
+		log.Println("Connection successfully established!")
 	case <- time.After(6 * time.Second):
 		panic(errors.New("Timeout after 6 seconds waiting for connection to stablish!"))
 	}
